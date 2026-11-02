@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.py[cod]
+.coverage
+.coverage.*
+.DS_Store
+
+# Archivo de trabajo local; se genera a partir de datos/ejemplo.json
+datos/local.json
