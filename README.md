@@ -12,6 +12,25 @@ Sobre esta base vamos a hacer el diagnóstico de calidad, los refactorings y la 
 - Bruno Giuliano Vapore
 - Santiago Octavio Varela
 
+## Preparar el entorno
+
+Usamos Python 3.13. El programa no necesita dependencias; Black y flake8 son solo para revisar el formato y el estilo.
+
+```bash
+python3.13 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+```
+
+Antes de subir un cambio conviene correr:
+
+```bash
+python -m black --check .
+python -m flake8 .
+```
+
+La configuración de flake8 está en `setup.cfg` y acepta el largo de línea y los espacios que deja Black, para que las dos herramientas no se contradigan.
+
 ## Estado
 
-En construcción. Las instrucciones de instalación y uso se agregan cuando esté la primera versión.
+En construcción. Las instrucciones de uso se agregan cuando esté la primera versión.
