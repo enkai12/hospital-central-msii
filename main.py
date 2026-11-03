@@ -3,6 +3,7 @@ from pathlib import Path
 from hospital import gestion
 
 RUTA_EJEMPLO = Path(__file__).parent / "datos" / "ejemplo.json"
+RUTA_LOCAL = Path(__file__).parent / "datos" / "local.json"
 
 MENU = """
 Hospital Central - Agenda de turnos
@@ -24,7 +25,12 @@ def pedir_numero(texto):
 
 
 def main():
-    datos = gestion.cargar_datos(RUTA_EJEMPLO)
+    try:
+        datos = gestion.cargar_datos(RUTA_LOCAL, RUTA_EJEMPLO)
+    except ValueError:
+        print("No se pudo leer datos/local.json: el archivo está dañado.")
+        print("Revisalo o borralo para empezar de nuevo con los datos de ejemplo.")
+        return
 
     while True:
         print(MENU)
@@ -32,7 +38,9 @@ def main():
 
         if opcion == "1":
             nombre = input("Nombre del paciente: ")
-            _, mensaje = gestion.registrar_paciente(datos, nombre)
+            ok, mensaje = gestion.registrar_paciente(datos, nombre)
+            if ok:
+                gestion.guardar_datos(datos, RUTA_LOCAL)
             print(mensaje)
         elif opcion == "2":
             pacientes = gestion.listar_pacientes(datos)
@@ -53,16 +61,20 @@ def main():
             if paciente_id is None or profesional_id is None:
                 print("El número de paciente y de profesional tiene que ser entero.")
             else:
-                _, mensaje = gestion.reservar_turno(
+                ok, mensaje = gestion.reservar_turno(
                     datos, paciente_id, profesional_id, fecha, hora
                 )
+                if ok:
+                    gestion.guardar_datos(datos, RUTA_LOCAL)
                 print(mensaje)
         elif opcion == "4":
             turno_id = pedir_numero("Número de turno: ")
             if turno_id is None:
                 print("El número de turno tiene que ser entero.")
             else:
-                _, mensaje = gestion.cancelar_turno(datos, turno_id)
+                ok, mensaje = gestion.cancelar_turno(datos, turno_id)
+                if ok:
+                    gestion.guardar_datos(datos, RUTA_LOCAL)
                 print(mensaje)
         elif opcion == "5":
             profesional_id = pedir_numero("Número de profesional: ")

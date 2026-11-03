@@ -1,6 +1,7 @@
 """Operaciones de la agenda de turnos del Hospital Central."""
 
 import json
+import shutil
 from datetime import datetime
 
 FRANJAS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"]
@@ -8,19 +9,16 @@ ACTIVO = "ACTIVO"
 CANCELADO = "CANCELADO"
 
 
-def cargar_datos(ruta):
+def cargar_datos(ruta, ruta_ejemplo):
+    if not ruta.exists():
+        shutil.copyfile(ruta_ejemplo, ruta)
     with open(ruta, encoding="utf-8") as archivo:
         return json.load(archivo)
 
 
-def datos_vacios():
-    return {
-        "proximo_paciente": 1,
-        "proximo_turno": 1,
-        "pacientes": [],
-        "profesionales": [],
-        "turnos": [],
-    }
+def guardar_datos(datos, ruta):
+    with open(ruta, "w", encoding="utf-8") as archivo:
+        json.dump(datos, archivo, ensure_ascii=False, indent=2)
 
 
 def registrar_paciente(datos, nombre):
