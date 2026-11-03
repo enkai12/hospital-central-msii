@@ -1,6 +1,6 @@
 # Hospital Central: agenda de turnos
 
-Trabajo Práctico Integrador de Metodología de Sistemas II (UTN, Tecnicatura Universitaria en Programación a Distancia), Comisión 4.
+Trabajo Práctico Integrador de Metodología de Sistemas II (UTN, Tecnicatura Universitaria en Programación a Distancia), Comisión 15.
 
 Es una agenda de turnos para la recepción de un hospital: registrar pacientes, reservar y cancelar turnos y consultar la agenda de cada profesional. Funciona por consola y guarda los datos en un archivo JSON.
 
