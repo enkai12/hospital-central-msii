@@ -10,6 +10,8 @@ Hospital Central - Agenda de turnos
 2. Listar pacientes
 3. Reservar turno
 4. Cancelar turno
+5. Consultar la agenda de un profesional
+6. Consultar los turnos de un paciente
 0. Salir"""
 
 
@@ -62,6 +64,40 @@ def main():
             else:
                 _, mensaje = gestion.cancelar_turno(datos, turno_id)
                 print(mensaje)
+        elif opcion == "5":
+            profesional_id = pedir_numero("Número de profesional: ")
+            fecha = input("Fecha (AAAA-MM-DD): ").strip()
+            if profesional_id is None:
+                print("El número de profesional tiene que ser entero.")
+            else:
+                ok, resultado = gestion.agenda_profesional(datos, profesional_id, fecha)
+                if not ok:
+                    print(resultado)
+                else:
+                    for franja in resultado:
+                        if franja["turno"] is None:
+                            print(f"{franja['hora']}  libre")
+                        else:
+                            print(
+                                f"{franja['hora']}  turno {franja['turno']['turno_id']}"
+                                f" - {franja['turno']['paciente']}"
+                            )
+        elif opcion == "6":
+            paciente_id = pedir_numero("Número de paciente: ")
+            if paciente_id is None:
+                print("El número de paciente tiene que ser entero.")
+            else:
+                ok, resultado = gestion.historial_paciente(datos, paciente_id)
+                if not ok:
+                    print(resultado)
+                elif not resultado:
+                    print("El paciente no tiene turnos.")
+                else:
+                    for turno in resultado:
+                        print(
+                            f"Turno {turno['id']}: {turno['fecha']} {turno['hora']} "
+                            f"con {turno['profesional']} - {turno['estado']}"
+                        )
         elif opcion == "0":
             print("Hasta luego.")
             break

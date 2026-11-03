@@ -100,3 +100,53 @@ def cancelar_turno(datos, turno_id):
 
     turno["estado"] = CANCELADO
     return True, f"Turno {turno_id} cancelado. La franja quedó libre."
+
+
+def agenda_profesional(datos, profesional_id, fecha):
+    profesional = None
+    for p in datos["profesionales"]:
+        if p["id"] == profesional_id:
+            profesional = p
+    if profesional is None:
+        return False, "No existe un profesional con ese número."
+
+    try:
+        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d")
+    except ValueError:
+        return False, "La fecha no es válida. Usá el formato AAAA-MM-DD."
+    if fecha_valida.strftime("%Y-%m-%d") != fecha:
+        return False, "La fecha no es válida. Usá el formato AAAA-MM-DD."
+
+    agenda = []
+    for hora in FRANJAS:
+        ocupado_por = None
+        for turno in datos["turnos"]:
+            if (
+                turno["profesional_id"] == profesional_id
+                and turno["fecha"] == fecha
+                and turno["hora"] == hora
+                and turno["estado"] == ACTIVO
+            ):
+                for p in datos["pacientes"]:
+                    if p["id"] == turno["paciente_id"]:
+                        ocupado_por = {"turno_id": turno["id"], "paciente": p["nombre"]}
+        agenda.append({"hora": hora, "turno": ocupado_por})
+    return True, agenda
+
+
+def historial_paciente(datos, paciente_id):
+    paciente = None
+    for p in datos["pacientes"]:
+        if p["id"] == paciente_id:
+            paciente = p
+    if paciente is None:
+        return False, "No existe un paciente con ese número."
+
+    historial = []
+    for turno in datos["turnos"]:
+        if turno["paciente_id"] == paciente_id:
+            for p in datos["profesionales"]:
+                if p["id"] == turno["profesional_id"]:
+                    historial.append({**turno, "profesional": p["nombre"]})
+    historial.sort(key=lambda t: (t["fecha"], t["hora"], t["id"]))
+    return True, historial
