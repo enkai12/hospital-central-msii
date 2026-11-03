@@ -1,0 +1,15 @@
+{
+  "proximo_paciente": 3,
+  "proximo_turno": 1,
+  "pacientes": [
+    {"id": 1, "nombre": "Ana Gómez"},
+    {"id": 2, "nombre": "Carlos Ruiz"}
+  ],
+  "profesionales": [
+    {"id": 1, "nombre": "Laura Méndez", "especialidad": "Clínica médica"},
+    {"id": 2, "nombre": "Martín Ríos", "especialidad": "Pediatría"},
+    {"id": 3, "nombre": "Sofía Herrera", "especialidad": "Traumatología"},
+    {"id": 4, "nombre": "Diego Paz", "especialidad": "Cardiología"}
+  ],
+  "turnos": []
+}
