@@ -26,6 +26,7 @@ def validar_fecha(fecha):
 def validar_horario(hora):
     return hora in FRANJAS
 
+
 def buscar_conflicto(turnos, paciente_id, profesional_id, fecha, hora):
     for turno in turnos:
         if turno["estado"] == ACTIVO and turno["fecha"] == fecha:
@@ -34,6 +35,7 @@ def buscar_conflicto(turnos, paciente_id, profesional_id, fecha, hora):
             if turno["hora"] == hora and turno["paciente_id"] == paciente_id:
                 return "El paciente ya tiene un turno en esa fecha y horario."
     return None
+
 
 def registrar_paciente(datos, nombre):
     nombre = nombre.strip()
