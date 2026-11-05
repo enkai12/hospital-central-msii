@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hospital import gestion
+from hospital import gestion, persistencia
 
 RUTA_EJEMPLO = Path(__file__).parent / "datos" / "ejemplo.json"
 RUTA_LOCAL = Path(__file__).parent / "datos" / "local.json"
@@ -26,7 +26,7 @@ def pedir_numero(texto):
 
 def main():
     try:
-        datos = gestion.cargar_datos(RUTA_LOCAL, RUTA_EJEMPLO)
+        datos = persistencia.cargar_datos(RUTA_LOCAL, RUTA_EJEMPLO)
     except ValueError:
         print("No se pudo leer datos/local.json: el archivo está dañado.")
         print("Revisalo o borralo para empezar de nuevo con los datos de ejemplo.")
@@ -40,7 +40,7 @@ def main():
             nombre = input("Nombre del paciente: ")
             ok, mensaje = gestion.registrar_paciente(datos, nombre)
             if ok:
-                gestion.guardar_datos(datos, RUTA_LOCAL)
+                persistencia.guardar_datos(datos, RUTA_LOCAL)
             print(mensaje)
         elif opcion == "2":
             pacientes = gestion.listar_pacientes(datos)
@@ -65,7 +65,7 @@ def main():
                     datos, paciente_id, profesional_id, fecha, hora
                 )
                 if ok:
-                    gestion.guardar_datos(datos, RUTA_LOCAL)
+                    persistencia.guardar_datos(datos, RUTA_LOCAL)
                 print(mensaje)
         elif opcion == "4":
             turno_id = pedir_numero("Número de turno: ")
@@ -74,7 +74,7 @@ def main():
             else:
                 ok, mensaje = gestion.cancelar_turno(datos, turno_id)
                 if ok:
-                    gestion.guardar_datos(datos, RUTA_LOCAL)
+                    persistencia.guardar_datos(datos, RUTA_LOCAL)
                 print(mensaje)
         elif opcion == "5":
             profesional_id = pedir_numero("Número de profesional: ")
