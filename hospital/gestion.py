@@ -1,11 +1,20 @@
 """Operaciones de la agenda de turnos del Hospital Central."""
 
+from dataclasses import dataclass
 from datetime import datetime
 
 FRANJAS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"]
 ACTIVO = "ACTIVO"
 CANCELADO = "CANCELADO"
 MENSAJE_FECHA_INVALIDA = "La fecha no es válida. Usá el formato AAAA-MM-DD."
+
+
+@dataclass(frozen=True)
+class SolicitudTurno:
+    paciente_id: int
+    profesional_id: int
+    fecha: str
+    hora: str
 
 
 def buscar_por_id(elementos, id_buscado):
@@ -27,12 +36,18 @@ def validar_horario(hora):
     return hora in FRANJAS
 
 
-def buscar_conflicto(turnos, paciente_id, profesional_id, fecha, hora):
+def buscar_conflicto(turnos, solicitud: SolicitudTurno):
     for turno in turnos:
-        if turno["estado"] == ACTIVO and turno["fecha"] == fecha:
-            if turno["hora"] == hora and turno["profesional_id"] == profesional_id:
+        if turno["estado"] == ACTIVO and turno["fecha"] == solicitud.fecha:
+            if (
+                turno["hora"] == solicitud.hora
+                and turno["profesional_id"] == solicitud.profesional_id
+            ):
                 return "El profesional ya tiene un turno en esa fecha y horario."
-            if turno["hora"] == hora and turno["paciente_id"] == paciente_id:
+            if (
+                turno["hora"] == solicitud.hora
+                and turno["paciente_id"] == solicitud.paciente_id
+            ):
                 return "El paciente ya tiene un turno en esa fecha y horario."
     return None
 
@@ -52,42 +67,40 @@ def listar_pacientes(datos):
     return sorted(datos["pacientes"], key=lambda paciente: paciente["id"])
 
 
-def reservar_turno(datos, paciente_id, profesional_id, fecha, hora):
-    paciente = buscar_por_id(datos["pacientes"], paciente_id)
+def reservar_turno(datos, solicitud: SolicitudTurno):
+    paciente = buscar_por_id(datos["pacientes"], solicitud.paciente_id)
     if paciente is None:
         return False, "No existe un paciente con ese número."
 
-    profesional = buscar_por_id(datos["profesionales"], profesional_id)
+    profesional = buscar_por_id(datos["profesionales"], solicitud.profesional_id)
     if profesional is None:
         return False, "No existe un profesional con ese número."
 
-    if not validar_fecha(fecha):
+    if not validar_fecha(solicitud.fecha):
         return False, MENSAJE_FECHA_INVALIDA
 
-    if not validar_horario(hora):
+    if not validar_horario(solicitud.hora):
         return False, "El horario tiene que ser una de las franjas: " + ", ".join(
             FRANJAS
         )
 
-    conflicto = buscar_conflicto(
-        datos["turnos"], paciente_id, profesional_id, fecha, hora
-    )
+    conflicto = buscar_conflicto(datos["turnos"], solicitud)
     if conflicto is not None:
         return False, conflicto
 
     turno = {
         "id": datos["proximo_turno"],
-        "paciente_id": paciente_id,
-        "profesional_id": profesional_id,
-        "fecha": fecha,
-        "hora": hora,
+        "paciente_id": solicitud.paciente_id,
+        "profesional_id": solicitud.profesional_id,
+        "fecha": solicitud.fecha,
+        "hora": solicitud.hora,
         "estado": ACTIVO,
     }
     datos["turnos"].append(turno)
     datos["proximo_turno"] += 1
     return True, (
         f"Turno {turno['id']} reservado: {paciente['nombre']} con "
-        f"{profesional['nombre']} el {fecha} a las {hora}."
+        f"{profesional['nombre']} el {solicitud.fecha} a las {solicitud.hora}."
     )
 
 

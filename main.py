@@ -53,9 +53,13 @@ def opcion_reservar_turno(datos):
     if paciente_id is None or profesional_id is None:
         print("El número de paciente y de profesional tiene que ser entero.")
         return
-    ok, mensaje = gestion.reservar_turno(
-        datos, paciente_id, profesional_id, fecha, hora
+    solicitud = gestion.SolicitudTurno(
+        paciente_id=paciente_id,
+        profesional_id=profesional_id,
+        fecha=fecha,
+        hora=hora,
     )
+    ok, mensaje = gestion.reservar_turno(datos, solicitud)
     if ok:
         persistencia.guardar_datos(datos, RUTA_LOCAL)
     print(mensaje)
