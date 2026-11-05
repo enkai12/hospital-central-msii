@@ -26,30 +26,14 @@ def validar_fecha(fecha):
 def validar_horario(hora):
     return hora in FRANJAS
 
-
-def profesional_ocupado(turnos, profesional_id, fecha, hora):
+def buscar_conflicto(turnos, paciente_id, profesional_id, fecha, hora):
     for turno in turnos:
-        if (
-            turno["estado"] == ACTIVO
-            and turno["profesional_id"] == profesional_id
-            and turno["fecha"] == fecha
-            and turno["hora"] == hora
-        ):
-            return True
-    return False
-
-
-def paciente_ocupado(turnos, paciente_id, fecha, hora):
-    for turno in turnos:
-        if (
-            turno["estado"] == ACTIVO
-            and turno["paciente_id"] == paciente_id
-            and turno["fecha"] == fecha
-            and turno["hora"] == hora
-        ):
-            return True
-    return False
-
+        if turno["estado"] == ACTIVO and turno["fecha"] == fecha:
+            if turno["hora"] == hora and turno["profesional_id"] == profesional_id:
+                return "El profesional ya tiene un turno en esa fecha y horario."
+            if turno["hora"] == hora and turno["paciente_id"] == paciente_id:
+                return "El paciente ya tiene un turno en esa fecha y horario."
+    return None
 
 def registrar_paciente(datos, nombre):
     nombre = nombre.strip()
@@ -83,11 +67,11 @@ def reservar_turno(datos, paciente_id, profesional_id, fecha, hora):
             FRANJAS
         )
 
-    if profesional_ocupado(datos["turnos"], profesional_id, fecha, hora):
-        return False, "El profesional ya tiene un turno en esa fecha y horario."
-
-    if paciente_ocupado(datos["turnos"], paciente_id, fecha, hora):
-        return False, "El paciente ya tiene un turno en esa fecha y horario."
+    conflicto = buscar_conflicto(
+        datos["turnos"], paciente_id, profesional_id, fecha, hora
+    )
+    if conflicto is not None:
+        return False, conflicto
 
     turno = {
         "id": datos["proximo_turno"],
