@@ -7,3 +7,5 @@ __pycache__/
 
 # Archivo de trabajo local; se genera a partir de datos/ejemplo.json
 datos/local.json
+# Copia temporal que usa el guardado; solo queda si el programa se corta a la fuerza
+datos/local.json.tmp
