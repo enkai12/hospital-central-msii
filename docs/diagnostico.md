@@ -51,7 +51,7 @@ Estos problemas no rompen nada hoy, pero hacen que cada cambio cueste más y ten
 ### Fuentes de diagnóstico empleadas
 Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`) combinando tres fuentes complementarias:
 1. **Lectura e inspección manual del código:** Revisión estructural de `main.py` y `hospital/gestion.py` evaluando cohesión, acoplamiento, responsabilidades (SOLID) y repetición de lógica.
-2. **Ejecución de casos de borde:** Pruebas forzando entradas inesperadas (`EOFError` con Ctrl+D/Ctrl+Z), JSON válido pero con estructura ajena (`[]`), ausencia simultánea de archivos JSON e inconsistencias referenciales manuales.
+2. **Ejecución de casos de borde:** Pruebas forzando entradas inesperadas (`EOFError` con `Ctrl+D`), JSON válido pero con estructura ajena (`[]` y `{}`), ausencia simultánea de archivos JSON e inconsistencias referenciales manuales.
 3. **Análisis estático con SonarQube:** Ejecución del escáner sobre las 231 líneas de código del tag `estado-inicial` para medir complejidad cognitiva, duplicación de literales y deuda técnica estimada.
 
 ### Resumen del catálogo de hallazgos (H1 a H11)
@@ -60,7 +60,7 @@ Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`)
 | :--- | :--- | :--- | :--- |
 | **H1** | Funciones largas (*Long Method*) | `main.py`: `main()` (líneas 27–117); `hospital/gestion.py`: `reservar_turno` (líneas 39–86) | Alta |
 | **H2** | Búsqueda por número duplicada (*Duplicated Code*) | `hospital/gestion.py`, líneas 41, 48, 91, 105, 128, 137 y 146 | Alta |
-| **H3** | Reglas y archivo en el mismo módulo (*Large Class* / baja cohesión) | `hospital/gestion.py`: `cargar_datos` y `guardar_datos` (12–21) junto a las reglas (24–150) | Alta |
+| **H3** | Reglas y archivo en el mismo módulo (*Large Class* y baja cohesión) | `hospital/gestion.py`: `cargar_datos` y `guardar_datos` (12–21) junto a las reglas (24–150) | Alta |
 | **H4** | Errores sin controlar al cargar o leer | `main.py`, líneas 28–33 y 37; `hospital/gestion.py`, líneas 12–16 | Alta |
 | **H5** | Validación de fecha duplicada (*Duplicated Code*) | `hospital/gestion.py`, líneas 54–59 y 111–116 | Media |
 | **H6** | Demasiados parámetros en la reserva (*Long Parameter List*) | `hospital/gestion.py`, línea 39; `main.py`, líneas 57–66 | Media |
@@ -96,7 +96,7 @@ Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`)
 
 #### H3 — Reglas y archivo en el mismo módulo (*Large Class* y baja cohesión)
 - **ID:** H3
-- **Problema / Code Smell:** Reglas de negocio y persistencia en archivos en el mismo módulo (*Large Class*, baja cohesión, violación de SRP y DIP).
+- **Problema / Code Smell:** Reglas de negocio y persistencia en archivos en el mismo módulo (*Large Class*, baja cohesión, violación de SRP).
 - **Ubicación exacta en `estado-inicial` (`e5d6927`):** `hospital/gestion.py`: `cargar_datos()` y `guardar_datos()` (líneas 12–21) junto a las reglas de negocio (líneas 24–150).
 - **Evidencia:** `gestion.py` tiene las reglas de los turnos y también la lectura y escritura del JSON, importando `json` y `shutil`. Las reglas no pueden usarse sin ese formato de datos.
 - **Impacto:** El módulo cambia por dos motivos distintos (si cambia una regla o si cambia la forma de guardar), y para probar una regla hay que conocer la estructura del archivo.
@@ -108,7 +108,7 @@ Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`)
 - **ID:** H4
 - **Problema / Code Smell:** Manejo incompleto de excepciones de entrada/salida y de estructura de datos.
 - **Ubicación exacta en `estado-inicial` (`e5d6927`):** `main.py`, líneas 28–33 y 37; `hospital/gestion.py`, líneas 12–16.
-- **Evidencia:** Solo se controla el JSON mal escrito (`ValueError`). Si el archivo es JSON válido pero con otra forma, por ejemplo `[]`, el programa se corta en la primera operación con `TypeError` o `KeyError`. Si faltan los dos archivos (`local.json` y `ejemplo.json`), se corta con `FileNotFoundError`. Si se cierra la entrada estándar con `Ctrl+D` / `Ctrl+Z`, termina abruptamente con `EOFError`.
+- **Evidencia:** Solo se controla el JSON mal escrito (`ValueError`). Si el archivo es JSON válido pero con otra forma, el programa se corta en la primera operación: con `TypeError` si el archivo tiene `[]` y con `KeyError` si tiene `{}`. Si faltan los dos archivos (`local.json` y `ejemplo.json`), se corta con `FileNotFoundError`. Si se cierra la entrada estándar con `Ctrl+D`, termina abruptamente con `EOFError`.
 - **Impacto:** Afecta la calidad externa en casos de borde, porque quien usa el sistema ve un *traceback* técnico en lugar de un aviso claro.
 - **Riesgo de mantenimiento:** Los fallos aparecen lejos de su causa real y cuesta encontrarlos.
 - **Prioridad:** Alta.
@@ -126,7 +126,7 @@ Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`)
 
 #### H6 — Demasiados parámetros en la reserva (*Long Parameter List*)
 - **ID:** H6
-- **Problema / Code Smell:** Lista larga de parámetros en la reserva (*Long Parameter List* / *Data Clumps*).
+- **Problema / Code Smell:** Lista larga de parámetros en la reserva (*Long Parameter List*).
 - **Ubicación exacta en `estado-inicial` (`e5d6927`):** `hospital/gestion.py`, línea 39 (`def reservar_turno(datos, paciente_id, profesional_id, fecha, hora)`); `main.py`, líneas 57–66.
 - **Evidencia:** `reservar_turno` recibe cinco parámetros, y cuatro de ellos (`paciente_id`, `profesional_id`, `fecha` y `hora`) viajan siempre juntos desde la consola.
 - **Impacto:** La firma es larga y es fácil pasar los datos en otro orden (por ejemplo, invertir `paciente_id` y `profesional_id` o `fecha` y `hora`) sin que nada lo detecte antes de ejecutar.
@@ -144,9 +144,9 @@ Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`)
 - **Prioridad:** Media.
 - **Acción propuesta:** Lanzar excepciones propias del dominio y atraparlas de forma centralizada en la consola.
 
-#### H8 — La consola depende de la forma interna de los datos (Acoplamiento)
+#### H8 — La consola depende de la forma interna de los datos (acoplamiento)
 - **ID:** H8
-- **Problema / Code Smell:** Violación de encapsulamiento y acoplamiento entre la interfaz de consola y la estructura interna del diccionario (`Feature Envy` / *Inappropriate Intimacy*).
+- **Problema / Code Smell:** Acoplamiento entre la interfaz de consola y la estructura interna del diccionario.
 - **Ubicación exacta en `estado-inicial` (`e5d6927`):** `main.py`, líneas 52–56, 89–96 y 108–112.
 - **Evidencia:** `main.py` recorre `datos["profesionales"]` directamente en la opción 3 (a diferencia de los pacientes, donde sí usa una función) y arma los mensajes leyendo claves anidadas internas como `franja["turno"]["turno_id"]`.
 - **Impacto:** Cualquier cambio en la estructura interna de los datos rompe la consola, aunque las reglas de negocio sigan iguales.
@@ -197,8 +197,10 @@ Para completar la revisión pasamos **SonarQube** sobre la versión inicial (tag
 
 ### Por qué SonarQube califica con "A" y qué problemas no detecta
 A pesar de estos cuatro problemas de severidad alta, el proyecto obtuvo la **calificación A en mantenibilidad** (con 0% de duplicación reportada). Esto se explica por el modelo de cálculo y el alcance de las reglas estáticas:
-- **Cálculo del *Technical Debt Ratio*:** SonarQube calcula la calificación comparando el tiempo estimado para corregir los problemas detectados (**1 hora y 39 minutos = 99 minutos**) contra el costo estimado de reescribir desde cero las **231 líneas de código** (a razón de 30 minutos por línea/bloque según su métrica base). Como la proporción de deuda resulta inferior al 5%, el *Quality Gate* aprueba con nota A.
+- **Cálculo del *Technical Debt Ratio*:** SonarQube calcula la calificación comparando el tiempo estimado para corregir los problemas detectados (**1 hora y 39 minutos = 99 minutos**) contra el costo estimado de reescribir desde cero las **231 líneas de código** (a razón de 30 minutos por línea). La proporción da un 1,4% (99 sobre 6.930 minutos) y, como es menor al 5%, la calificación es A. El *Quality Gate* es otro control, y también aprobó.
 - **Ceguera ante problemas arquitectónicos (H3 y H8):** Las reglas estáticas de SonarQube analizan la sintaxis y el flujo de control de cada función por separado, pero no comprenden la semántica de capas del dominio; por eso no detectan que `gestion.py` mezcle reglas de negocio con persistencia en archivos JSON (**H3**) ni que la interfaz `main.py` dependa de la estructura interna de los diccionarios (**H8**).
 - **Umbral mínimo de bloques duplicados (H2):** SonarQube reportó `0.0% Duplications` y no marcó los siete bucles de búsqueda secuencial (**H2**) porque su detector de clones exige un mínimo de líneas o tokens idénticos consecutivos, mientras que aquí son bucles cortos de 3 líneas donde cambia el nombre de la clave consultada (`"pacientes"`, `"profesionales"`, `"turnos"`).
 
 Por estas razones utilizamos el análisis estático de SonarQube como evidencia cuantitativa complementaria de la lectura crítica del código y de las pruebas de casos de borde, y no como única fuente de diagnóstico.
+
+Capturas del análisis: [pantalla principal](evidencias/sonarqube-estado-inicial-resumen.png) y [lista de issues](evidencias/sonarqube-estado-inicial-issues.png).
