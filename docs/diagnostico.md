@@ -202,3 +202,5 @@ A pesar de estos cuatro problemas de severidad alta, el proyecto obtuvo la **cal
 - **Umbral mínimo de bloques duplicados (H2):** SonarQube reportó `0.0% Duplications` y no marcó los siete bucles de búsqueda secuencial (**H2**) porque su detector de clones exige un mínimo de líneas o tokens idénticos consecutivos, mientras que aquí son bucles cortos de 3 líneas donde cambia el nombre de la clave consultada (`"pacientes"`, `"profesionales"`, `"turnos"`).
 
 Por estas razones utilizamos el análisis estático de SonarQube como evidencia cuantitativa complementaria de la lectura crítica del código y de las pruebas de casos de borde, y no como única fuente de diagnóstico.
+
+Capturas del análisis: [pantalla principal](evidencias/sonarqube-estado-inicial-resumen.png) y [lista de issues](evidencias/sonarqube-estado-inicial-issues.png).
