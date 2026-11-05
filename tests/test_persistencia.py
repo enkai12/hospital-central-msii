@@ -111,6 +111,21 @@ class TestPersistencia(unittest.TestCase):
         self.assertEqual(self.ruta_datos.read_bytes(), bytes_datos)
         self.assertEqual(self.ruta_ejemplo.read_bytes(), bytes_ejemplo)
 
+    def test_guardar_con_error_no_modifica_destino(self):
+        """Si el guardado falla, el archivo anterior queda igual y sin temporales."""
+        guardar_datos(self.datos, self.ruta_datos)
+        bytes_datos = self.ruta_datos.read_bytes()
+
+        datos_invalidos = dict(self.datos, turnos=[object()])
+        with self.assertRaises(TypeError):
+            guardar_datos(datos_invalidos, self.ruta_datos)
+
+        self.assertEqual(self.ruta_datos.read_bytes(), bytes_datos)
+        self.assertEqual(
+            sorted(p.name for p in Path(self.temp_dir.name).iterdir()),
+            ["local.json"],
+        )
+
     def test_reserva_persistida_aparece_en_agenda_e_historial(self):
         """Una reserva guardada y recargada se refleja en agenda e historial."""
         ejemplo_valido = {
