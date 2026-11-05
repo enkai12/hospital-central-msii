@@ -145,6 +145,50 @@ class TestTurnos(unittest.TestCase):
         self.assertEqual(self.datos["turnos"][-1], turno_esperado)
         self.assertEqual(self.datos["proximo_turno"], 5)
 
+    def test_precedencia_mensaje_conflictos_en_turnos_distintos(self):
+        """El orden de los turnos determina el mensaje ante dos conflictos."""
+        turno_1 = {
+            "id": 1,
+            "paciente_id": 1,
+            "profesional_id": 2,
+            "fecha": "2026-11-10",
+            "hora": "09:00",
+            "estado": ACTIVO,
+        }
+        turno_2 = {
+            "id": 2,
+            "paciente_id": 2,
+            "profesional_id": 1,
+            "fecha": "2026-11-10",
+            "hora": "09:00",
+            "estado": ACTIVO,
+        }
+
+        casos = [
+            (
+                "paciente primero",
+                [turno_1, turno_2],
+                "El paciente ya tiene un turno en esa fecha y horario.",
+            ),
+            (
+                "profesional primero",
+                [turno_2, turno_1],
+                "El profesional ya tiene un turno en esa fecha y horario.",
+            ),
+        ]
+
+        for orden, turnos, mensaje_esperado in casos:
+            with self.subTest(orden=orden):
+                datos = copy.deepcopy(self.datos)
+                datos["turnos"] = copy.deepcopy(turnos)
+                datos["proximo_turno"] = 3
+                snapshot = copy.deepcopy(datos)
+
+                exito, mensaje = reservar_turno(datos, 1, 1, "2026-11-10", "09:00")
+                self.assertFalse(exito)
+                self.assertEqual(mensaje, mensaje_esperado)
+                self.assertEqual(datos, snapshot)
+
     def test_cancelacion_libera_franja_y_conserva_historial(self):
         """Cancelar actualiza a CANCELADO y permite reservar de nuevo esa franja."""
         reservar_turno(self.datos, 1, 1, "2026-11-10", "09:00")

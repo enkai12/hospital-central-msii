@@ -8,12 +8,11 @@ import unittest
 from hospital.gestion import (
     ACTIVO,
     agenda_profesional,
-    cargar_datos,
-    guardar_datos,
     historial_paciente,
     registrar_paciente,
     reservar_turno,
 )
+from hospital.persistencia import cargar_datos, guardar_datos
 
 
 class TestPersistencia(unittest.TestCase):
