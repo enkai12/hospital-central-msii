@@ -5,6 +5,7 @@ from datetime import datetime
 FRANJAS = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30"]
 ACTIVO = "ACTIVO"
 CANCELADO = "CANCELADO"
+MENSAJE_FECHA_INVALIDA = "La fecha no es válida. Usá el formato AAAA-MM-DD."
 
 
 def buscar_por_id(elementos, id_buscado):
@@ -12,6 +13,42 @@ def buscar_por_id(elementos, id_buscado):
         if elemento["id"] == id_buscado:
             return elemento
     return None
+
+
+def validar_fecha(fecha):
+    try:
+        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d")
+    except ValueError:
+        return False
+    return fecha_valida.strftime("%Y-%m-%d") == fecha
+
+
+def validar_horario(hora):
+    return hora in FRANJAS
+
+
+def profesional_ocupado(turnos, profesional_id, fecha, hora):
+    for turno in turnos:
+        if (
+            turno["estado"] == ACTIVO
+            and turno["profesional_id"] == profesional_id
+            and turno["fecha"] == fecha
+            and turno["hora"] == hora
+        ):
+            return True
+    return False
+
+
+def paciente_ocupado(turnos, paciente_id, fecha, hora):
+    for turno in turnos:
+        if (
+            turno["estado"] == ACTIVO
+            and turno["paciente_id"] == paciente_id
+            and turno["fecha"] == fecha
+            and turno["hora"] == hora
+        ):
+            return True
+    return False
 
 
 def registrar_paciente(datos, nombre):
@@ -38,24 +75,19 @@ def reservar_turno(datos, paciente_id, profesional_id, fecha, hora):
     if profesional is None:
         return False, "No existe un profesional con ese número."
 
-    try:
-        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d")
-    except ValueError:
-        return False, "La fecha no es válida. Usá el formato AAAA-MM-DD."
-    if fecha_valida.strftime("%Y-%m-%d") != fecha:
-        return False, "La fecha no es válida. Usá el formato AAAA-MM-DD."
+    if not validar_fecha(fecha):
+        return False, MENSAJE_FECHA_INVALIDA
 
-    if hora not in FRANJAS:
+    if not validar_horario(hora):
         return False, "El horario tiene que ser una de las franjas: " + ", ".join(
             FRANJAS
         )
 
-    for turno in datos["turnos"]:
-        if turno["estado"] == ACTIVO and turno["fecha"] == fecha:
-            if turno["hora"] == hora and turno["profesional_id"] == profesional_id:
-                return False, "El profesional ya tiene un turno en esa fecha y horario."
-            if turno["hora"] == hora and turno["paciente_id"] == paciente_id:
-                return False, "El paciente ya tiene un turno en esa fecha y horario."
+    if profesional_ocupado(datos["turnos"], profesional_id, fecha, hora):
+        return False, "El profesional ya tiene un turno en esa fecha y horario."
+
+    if paciente_ocupado(datos["turnos"], paciente_id, fecha, hora):
+        return False, "El paciente ya tiene un turno en esa fecha y horario."
 
     turno = {
         "id": datos["proximo_turno"],
@@ -89,12 +121,8 @@ def agenda_profesional(datos, profesional_id, fecha):
     if profesional is None:
         return False, "No existe un profesional con ese número."
 
-    try:
-        fecha_valida = datetime.strptime(fecha, "%Y-%m-%d")
-    except ValueError:
-        return False, "La fecha no es válida. Usá el formato AAAA-MM-DD."
-    if fecha_valida.strftime("%Y-%m-%d") != fecha:
-        return False, "La fecha no es válida. Usá el formato AAAA-MM-DD."
+    if not validar_fecha(fecha):
+        return False, MENSAJE_FECHA_INVALIDA
 
     agenda = []
     for hora in FRANJAS:
