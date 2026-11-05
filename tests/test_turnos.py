@@ -100,17 +100,50 @@ class TestTurnos(unittest.TestCase):
         # Mismo profesional con otro paciente en otra franja: permitido
         exito_otra_franja, _ = reservar_turno(self.datos, 2, 1, "2026-11-10", "09:30")
         self.assertTrue(exito_otra_franja)
+        self.assertEqual(len(self.datos["turnos"]), 2)
+        turno_esperado = {
+            "id": 2,
+            "paciente_id": 2,
+            "profesional_id": 1,
+            "fecha": "2026-11-10",
+            "hora": "09:30",
+            "estado": ACTIVO,
+        }
+        self.assertEqual(self.datos["turnos"][-1], turno_esperado)
+        self.assertEqual(self.datos["proximo_turno"], 3)
 
         # Mismo profesional con otro paciente en la misma franja de otra fecha:
         # permitido
         exito_otra_fecha, _ = reservar_turno(self.datos, 2, 1, "2026-11-11", "09:00")
         self.assertTrue(exito_otra_fecha)
+        self.assertEqual(len(self.datos["turnos"]), 3)
+        turno_esperado = {
+            "id": 3,
+            "paciente_id": 2,
+            "profesional_id": 1,
+            "fecha": "2026-11-11",
+            "hora": "09:00",
+            "estado": ACTIVO,
+        }
+        self.assertEqual(self.datos["turnos"][-1], turno_esperado)
+        self.assertEqual(self.datos["proximo_turno"], 4)
 
         # Otro profesional con otro paciente en la franja original: permitido
         exito_otro_prof_y_pac, _ = reservar_turno(
             self.datos, 2, 2, "2026-11-10", "09:00"
         )
         self.assertTrue(exito_otro_prof_y_pac)
+        self.assertEqual(len(self.datos["turnos"]), 4)
+        turno_esperado = {
+            "id": 4,
+            "paciente_id": 2,
+            "profesional_id": 2,
+            "fecha": "2026-11-10",
+            "hora": "09:00",
+            "estado": ACTIVO,
+        }
+        self.assertEqual(self.datos["turnos"][-1], turno_esperado)
+        self.assertEqual(self.datos["proximo_turno"], 5)
 
     def test_cancelacion_libera_franja_y_conserva_historial(self):
         """Cancelar actualiza a CANCELADO y permite reservar de nuevo esa franja."""
