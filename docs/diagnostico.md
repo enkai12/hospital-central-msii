@@ -225,6 +225,8 @@ Repetimos el análisis sobre el código final (commit `465cc5e`), que ya incluye
 | Bugs y vulnerabilidades | 0 y 0 | 0 y 0 |
 | *Quality Gate* | Aprobado | Aprobado |
 
+Cada cifra se puede ver en las capturas de la versión inicial (al final de la sección 3) y de la final (al final de esta sección): las líneas, la calificación de mantenibilidad, la duplicación, los bugs, las vulnerabilidades y el *Quality Gate*, en la pantalla principal; los problemas y la deuda estimada (*effort*), en la lista de issues; y la complejidad y las funciones, en la sección *Measures*.
+
 ### Cómo leer la comparación
 - **Los cuatro problemas desaparecieron por los refactorings:** H1 partió `main()` y `reservar_turno()` en funciones más chicas; `agenda_profesional()` se simplificó con la búsqueda única (H2) y `validar_fecha` (H5); y H5 llevó el mensaje de la fecha a la constante `MENSAJE_FECHA_INVALIDA`.
 - **La complejidad cognitiva bajó casi a la mitad (144 → 76):** mide cuánto cuesta leer cada función, y ahora ninguna supera el máximo de 15.
@@ -259,3 +261,7 @@ Que SonarQube no marque problemas no significa que no quede deuda técnica. Igua
 El detalle de cada refactoring, con el código antes y después, está en [refactorings.md](refactorings.md).
 
 Capturas del análisis final: [pantalla principal](evidencias/sonarqube-version-final-resumen.png) y [lista de issues](evidencias/sonarqube-version-final-issues.png).
+
+Capturas de *Measures*:
+- Complejidad ciclomática y cognitiva: [versión inicial](evidencias/sonarqube-estado-inicial-complejidad.png) y [versión final](evidencias/sonarqube-version-final-complejidad.png).
+- Líneas de código y funciones: [versión inicial](evidencias/sonarqube-estado-inicial-lineas-y-funciones.png) y [versión final](evidencias/sonarqube-version-final-lineas-y-funciones.png).
