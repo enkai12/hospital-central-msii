@@ -316,7 +316,7 @@ def opcion_reservar_turno(datos):
 ## Ficha Técnica 3: H3 - Reubicación de responsabilidades de persistencia y desacoplamiento (*Extract Module* / *Move Method*)
 
 ### Trazabilidad y metadatos
-- **ID de diagnóstico asociado:** [H3 - Reglas y archivo en el mismo módulo (*Large Class* y baja cohesión)](diagnostico.md#h3--reglas-y-archivo-en-el-mismo-módulo-large-class-y-baja-cohesión)
+- **ID de diagnóstico asociado:** [H3 - Reglas y archivo en el mismo módulo (baja cohesión: dos motivos para cambiar)](diagnostico.md#h3--reglas-y-archivo-en-el-mismo-módulo-baja-cohesión-dos-motivos-para-cambiar)
 - **Técnica de refactoring:** *Extract Module* / *Move Method* (Fowler)
 - **Issue en GitHub:** [#18 - Refactoring H3: Separar la persistencia JSON de las reglas de gestión](https://github.com/enkai12/hospital-central-msii/issues/18)
 - **Pull Request:** [#21 - Paso la carga y el guardado del JSON a un módulo de persistencia](https://github.com/enkai12/hospital-central-msii/pull/21)
@@ -329,7 +329,7 @@ En el sistema base (`e5d6927`), el módulo `hospital/gestion.py` asumía simult�
 1. Las reglas de dominio médico de la agenda de turnos (altas de pacientes, validación de turnos, cancelaciones y consultas).
 2. Los detalles de infraestructura física y persistencia en disco: importación de `json` y `shutil`, apertura de archivos con codificación UTF-8, carga con `json.load()` y serialización directa con `json.dump()`.
 
-El diagnóstico clasifica históricamente este problema como *Large Class* / baja cohesión por analogía con la literatura orientada a objetos; aquí se trata de un módulo procedimental, no de una clase existente. La mezcla reúne dos motivos de cambio en `hospital/gestion.py`. Las reglas ya operaban sobre diccionarios y listas en memoria, sin necesitar leer o escribir archivos en cada llamada; el problema era la convivencia de responsabilidades en el mismo módulo, no una dependencia de ejecución inseparable.
+La mezcla reúne dos motivos de cambio en `hospital/gestion.py`. Las reglas ya operaban sobre diccionarios y listas en memoria, sin necesitar leer o escribir archivos en cada llamada; el problema era la convivencia de responsabilidades en el mismo módulo, no una dependencia de ejecución inseparable.
 
 > **Aclaración crucial de alcance:** Este refactoring consistió exclusivamente en la extracción modular y el desacoplamiento de dependencias. **No introdujo atomicidad ni guardado temporal en disco**; esas mejoras de robustez frente a fallos corresponden a una etapa posterior (ver sección complementaria H9).
 

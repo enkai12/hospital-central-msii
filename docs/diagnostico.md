@@ -1,6 +1,6 @@
 # Diagnóstico del Sistema Base (`estado-inicial`)
 
-Este documento registra la evaluación de calidad externa e interna (Etapa 2) y el catálogo de deuda técnica y *code smells* (Etapa 3) realizados sobre la versión inicial de la agenda de turnos del Hospital Central.
+Este documento registra la evaluación de calidad externa e interna (Etapa 2) y el catálogo de deuda técnica y *code smells* (Etapa 3) realizados sobre la versión inicial de la agenda de turnos del Hospital Central. Al final está el análisis de SonarQube sobre la versión refactorizada y el estado de cada hallazgo.
 
 ---
 
@@ -40,9 +40,9 @@ La estructura interna, en cambio, presenta debilidades que no se ven desde la co
 | **Funcionalidad visible** | Las cinco operaciones principales, el listado de pacientes y las 12 reglas se cumplen. | El sistema es útil tal como está para el usuario final. |
 | **Legibilidad** | La función del menú es larga (91 líneas) y los bucles de búsqueda usan nombres como `p` y `t`. | Cuesta seguir el flujo de ejecución y ubicar dónde se decide cada cosa. |
 | **Mantenibilidad** | La misma búsqueda por ID (7 veces) y la misma validación de fecha (2 veces) están copiadas en varias funciones. | Una corrección hay que hacerla en todos los lugares, y es fácil olvidarse de uno. |
-| **Evolución futura** | Las reglas dependen directamente del archivo JSON y cada opción nueva se agrega dentro de la misma función `main()`. | Cambiar la forma de guardar o sumar una operación obliga a tocar código que ya funciona y no cuenta con pruebas automatizadas. |
+| **Evolución futura** | Las reglas y el manejo del archivo JSON están en el mismo módulo, y cada opción nueva se agrega dentro de la misma función `main()`. | Cambiar la forma de guardar o sumar una operación obliga a tocar código que ya funciona y no cuenta con pruebas automatizadas. |
 
-Estos problemas no rompen nada hoy, pero hacen que cada cambio cueste más y tenga más riesgo. Por eso el trabajo no apunta a agregar funciones, sino a mejorar la estructura interna conservando exactamente el mismo comportamiento visible.
+En el uso normal el programa funciona bien; los fallos aparecen en casos de borde (H4, H9 y H11). El problema principal es que cada cambio cuesta más y tiene más riesgo. Por eso el trabajo no apunta a agregar funciones, sino a mejorar la estructura interna conservando exactamente el mismo comportamiento visible.
 
 ---
 
@@ -60,7 +60,7 @@ Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`)
 | :--- | :--- | :--- | :--- |
 | **H1** | Funciones largas (*Long Method*) | `main.py`: `main()` (líneas 27–117); `hospital/gestion.py`: `reservar_turno` (líneas 39–86) | Alta |
 | **H2** | Búsqueda por número duplicada (*Duplicated Code*) | `hospital/gestion.py`, líneas 41, 48, 91, 105, 128, 137 y 146 | Alta |
-| **H3** | Reglas y archivo en el mismo módulo (*Large Class* y baja cohesión) | `hospital/gestion.py`: `cargar_datos` y `guardar_datos` (12–21) junto a las reglas (24–150) | Alta |
+| **H3** | Reglas y archivo en el mismo módulo (baja cohesión: dos motivos para cambiar) | `hospital/gestion.py`: `cargar_datos` y `guardar_datos` (12–21) junto a las reglas (24–150) | Alta |
 | **H4** | Errores sin controlar al cargar o leer | `main.py`, líneas 28–33 y 37; `hospital/gestion.py`, líneas 12–16 | Alta |
 | **H5** | Validación de fecha duplicada (*Duplicated Code*) | `hospital/gestion.py`, líneas 54–59 y 111–116 | Media |
 | **H6** | Demasiados parámetros en la reserva (*Long Parameter List*) | `hospital/gestion.py`, línea 39; `main.py`, líneas 57–66 | Media |
@@ -94,11 +94,11 @@ Revisamos el código de la versión inicial (`estado-inicial`, commit `e5d6927`)
 - **Prioridad:** Alta.
 - **Acción propuesta:** Extraer una sola función genérica de búsqueda por ID, reutilizada por todas las operaciones.
 
-#### H3 — Reglas y archivo en el mismo módulo (*Large Class* y baja cohesión)
+#### H3 — Reglas y archivo en el mismo módulo (baja cohesión: dos motivos para cambiar)
 - **ID:** H3
-- **Problema / Code Smell:** Reglas de negocio y persistencia en archivos en el mismo módulo (*Large Class*, baja cohesión, violación de SRP).
+- **Problema / Code Smell:** Reglas de negocio y persistencia en archivos en el mismo módulo (baja cohesión: dos motivos para cambiar, violación de SRP).
 - **Ubicación exacta en `estado-inicial` (`e5d6927`):** `hospital/gestion.py`: `cargar_datos()` y `guardar_datos()` (líneas 12–21) junto a las reglas de negocio (líneas 24–150).
-- **Evidencia:** `gestion.py` tiene las reglas de los turnos y también la lectura y escritura del JSON, importando `json` y `shutil`. Las reglas no pueden usarse sin ese formato de datos.
+- **Evidencia:** `gestion.py` tiene las reglas de los turnos y también la lectura y escritura del JSON, importando `json` y `shutil`.
 - **Impacto:** El módulo cambia por dos motivos distintos (si cambia una regla o si cambia la forma de guardar), y para probar una regla hay que conocer la estructura del archivo.
 - **Riesgo de mantenimiento:** Cambiar el mecanismo de almacenamiento obliga a tocar el código de las reglas de negocio.
 - **Prioridad:** Alta.
@@ -204,3 +204,58 @@ A pesar de estos cuatro problemas de severidad alta, el proyecto obtuvo la **cal
 Por estas razones utilizamos el análisis estático de SonarQube como evidencia cuantitativa complementaria de la lectura crítica del código y de las pruebas de casos de borde, y no como única fuente de diagnóstico.
 
 Capturas del análisis: [pantalla principal](evidencias/sonarqube-estado-inicial-resumen.png) y [lista de issues](evidencias/sonarqube-estado-inicial-issues.png).
+
+---
+
+## 4. Análisis final de SonarQube sobre la versión refactorizada
+
+Repetimos el análisis sobre el código final (commit `465cc5e`), que ya incluye los refactorings de H2, H3, H1 y H5 y H6, y la corrección de H9. Usamos la misma versión de SonarQube (26.9) y el mismo perfil (*Sonar way*). Analizamos `main.py` y `hospital/` como código y `tests/` como pruebas (`sonar.tests=tests`), para que las cifras se puedan comparar con las de la versión inicial, que no tenía pruebas.
+
+| Métrica | Versión inicial (`e5d6927`) | Versión final (`465cc5e`) |
+| :--- | :--- | :--- |
+| Líneas de código | 231 | 265 |
+| Funciones | 10 | 20 |
+| Problemas de mantenibilidad | 4, de severidad alta | 0 |
+| Deuda técnica estimada | 99 minutos | 0 minutos |
+| Calificación de mantenibilidad | A | A |
+| Complejidad cognitiva total | 144 | 76 |
+| Funciones con complejidad cognitiva mayor a 15 | 3 (`main` 76, `reservar_turno` 23, `agenda_profesional` 22) | 0 |
+| Complejidad ciclomática total | 69 | 71 |
+| Duplicación | 0,0 % | 0,0 % |
+| Bugs y vulnerabilidades | 0 y 0 | 0 y 0 |
+| *Quality Gate* | Aprobado | Aprobado |
+
+### Cómo leer la comparación
+- **Los cuatro problemas desaparecieron por los refactorings:** H1 partió `main()` y `reservar_turno()` en funciones más chicas; `agenda_profesional()` se simplificó con la búsqueda única (H2) y `validar_fecha` (H5); y H5 llevó el mensaje de la fecha a la constante `MENSAJE_FECHA_INVALIDA`.
+- **La complejidad cognitiva bajó casi a la mitad (144 → 76):** mide cuánto cuesta leer cada función, y ahora ninguna supera el máximo de 15.
+- **La complejidad ciclomática total casi no cambia (69 → 71):** SonarQube suma uno por cada función, además de cada decisión (`if`, `for`, `and`, `or`). Pasamos de 10 a 20 funciones, así que el total queda parecido aunque cada función es más simple: el promedio por función baja de 6,9 a 3,6.
+- **Hay más líneas (231 → 265):** las funciones nuevas suman encabezados y llamadas, pero cada una es más corta.
+- **La cobertura figura en 0 %:** SonarQube no corre las pruebas; solo muestra la cobertura si se le pasa un reporte (`coverage.xml`), y no lo generamos. Las 20 pruebas corren en la integración continua.
+
+### Qué no mide SonarQube
+Que SonarQube no marque problemas no significa que no quede deuda técnica. Igual que en la versión inicial, sus reglas revisan cada función por separado y no detectan estos hallazgos del diagnóstico, que siguen abiertos y quedan como mejoras futuras:
+- **H4:** errores sin controlar al cargar o leer (un `local.json` con `[]` o `{}`, los archivos faltantes o la entrada cerrada).
+- **H7:** errores informados con `False` en lugar de excepciones.
+- **H8:** la consola depende de la forma interna de los datos.
+- **H10:** datos del dominio como texto suelto (*Primitive Obsession*).
+- **H11:** la agenda y la reserva no coinciden con datos inconsistentes.
+
+### Estado de los hallazgos
+
+| ID | Estado | Issue y Pull Request |
+| :--- | :--- | :--- |
+| **H1** | Resuelto con *Extract Method* | #17, PR #23 |
+| **H2** | Resuelto con *Extract Method* | #15, PR #20 |
+| **H3** | Resuelto con *Move Method* (reubicación de responsabilidad) | #18, PR #21 |
+| **H4** | Mejora futura | — |
+| **H5** | Resuelto junto con H1 (`validar_fecha`) | #17, PR #23 |
+| **H6** | Resuelto con *Introduce Parameter Object* (`SolicitudTurno`) | #19, PR #26 |
+| **H7** | Mejora futura | — |
+| **H8** | Mejora futura | — |
+| **H9** | Corregido aparte, porque cambia lo que pasa cuando el guardado falla: archivo temporal y `os.replace` | #24, PR #25 |
+| **H10** | Mejora futura | — |
+| **H11** | Mejora futura | — |
+
+El detalle de cada refactoring, con el código antes y después, está en [refactorings.md](refactorings.md).
+
+Capturas del análisis final: [pantalla principal](evidencias/sonarqube-version-final-resumen.png) y [lista de issues](evidencias/sonarqube-version-final-issues.png).
