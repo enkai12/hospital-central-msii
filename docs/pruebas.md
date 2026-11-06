@@ -8,19 +8,13 @@ La suite final sobre el commit `465cc5e` tiene **20 pruebas** repartidas en tres
 
 | Archivo | Pruebas | Qué comprueba |
 |---|---|---|
-| `tests/test_pacientes.py` | 3 | Alta válida y limpieza de espacios, rechazo de nombre vacío o con solo espacios sin cambiar los datos, identificadores únicos y pacientes con el mismo nombre. |
+| `tests/test_pacientes.py` | 3 | Alta con los espacios recortados y nombres iguales con identificadores distintos, rechazo de nombre vacío o con solo espacios sin cambiar los datos, y listado ordenado por número sin cambiar la lista original. |
 | `tests/test_turnos.py` | 12 | Reserva válida y avance de `proximo_turno`, reserva en las 6 franjas de `FRANJAS`, rechazo de 8 entradas inválidas sin cambiar los datos, profesional o paciente ocupado, orden del mensaje ante doble conflicto en turnos distintos, cancelación y liberación de franja, cancelación inválida, estructura de `agenda_profesional` y orden e historial de paciente con desempate por número de turno. |
 | `tests/test_persistencia.py` | 5 | Guardar y recargar conservando todos los datos y acentos, creación de `local.json` desde `ejemplo.json` si no existe, preservación de archivos ante JSON mal escrito, guardado con error sin modificar el archivo anterior ni dejar `.tmp`, y flujo completo de reservar, guardar, recargar y consultar agenda e historial. |
 
 ## Cómo correrlas en local
 
-Con el entorno virtual activado, desde la raíz del repositorio:
-
-```bash
-python -m unittest discover -s tests -v
-python -m black --check .
-python -m flake8 .
-```
+Las corrimos en macOS y Windows con Python 3.13.18, Black 26.10.0 y flake8 7.4.1, las versiones de requirements-dev.txt. En GitHub Actions, el workflow usa Python 3.13 en ubuntu-latest y corre, en este orden, Black, flake8 y unittest en cada push y en cada Pull Request. No tiene otros pasos.
 
 ## Salida de las 20 pruebas
 
@@ -74,10 +68,22 @@ Ran 20 tests in 0.020s
 OK
 ```
 
+## Salida de Black y flake8
+
+```
+python -m black --check .
+All done! ✨ 🍰 ✨
+8 files would be left unchanged.
+python -m flake8 .
+```
+flake8 no muestra nada cuando no encuentra problemas y termina con código 0.
+
+
 ## Comparación de salida e integración continua
 
 Además de las pruebas con `unittest`, sobre el commit `465cc5e` corrimos la demo completa, los dieciséis casos de borde, el caso de H11 y el doble conflicto, y los comparamos contra `estado-inicial`: dieron las mismas 403 líneas de salida por consola y el mismo archivo JSON final.
 
-En GitHub Actions (`.github/workflows/ci.yml`), cada push y cada Pull Request corre `unittest`, `black --check .` y `flake8 .`. La suite empezó con 18 pruebas en el PR #22, pasó a 19 en el PR #23 (con la prueba del orden de mensaje ante doble conflicto) y llegó a 20 en los PRs #25 y #26 (con la prueba del guardado fallido y la adaptación a `SolicitudTurno`):
+En GitHub Actions (`.github/workflows/ci.yml`), cada push y cada Pull Request corre `unittest`, `black --check .` y `flake8 .`. H2 (PR #20) y H3 (PR #21) se integraron antes de que existieran las pruebas automatizadas, así que los comprobamos comparando la salida con la de estado-inicial. Las pruebas se escribieron en paralelo, sobre la versión inicial. La suite empezó con 18 pruebas al abrir el PR #22 y se integró con 19, porque antes del merge se sumó la prueba del orden del mensaje ante doble conflicto. Llegó a 20 en el PR #25, con la prueba del guardado fallido, y en el PR #26 se adaptaron las llamadas a SolicitudTurno sin cambiar ningún resultado esperado. 
 
+Las ejecuciones sobre 465cc5e que muestra este documento son posteriores a todos los refactorings:
 ![Ejecuciones de la CI en los Pull Requests](evidencias/github-actions-ci-pull-requests.png)

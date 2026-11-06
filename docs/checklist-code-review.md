@@ -26,3 +26,25 @@ Un Pull Request se acepta cuando:
 ## Cómo escribimos cada observación
 
 En tres partes: qué vemos en el código, por qué importa y qué proponemos.
+
+## Revisiones de los Pull Requests
+
+Cada Pull Request lo revisó y lo aprobó un integrante distinto del autor. `main` exige una aprobación y que la integración continua esté en verde.
+
+| Pull Request | Autor | Revisó y aprobó | Merge |
+|---|---|---|---|
+| #7. Entorno de desarrollo | Agustín | Santiago | `587390a` |
+| #8. Base funcional | Agustín | Bruno | `e5d6927` |
+| #12. Diagnóstico y ADR | Bruno | Agustín | `e60e89c` |
+| #14. Diagnóstico alineado, checklist y evidencias | Agustín | Bruno | `0894c42` |
+| #20. Búsqueda única (H2) | Agustín | Bruno | `fc147dc` |
+| #21. Módulo de persistencia (H3) | Agustín | Bruno | `e873b85` |
+| #22. Pruebas de caracterización y CI | Santiago | Agustín (pidió cambios antes de aprobar) | `e94aaad` |
+| #23. Funciones del menú y de la reserva (H1 y H5) | Bruno | Agustín (pidió cambios antes de aprobar) | `a10ba35` |
+| #25. Guardado seguro (H9) | Agustín | Santiago | `c6ce82b` |
+| #26. Objeto de solicitud (H6) | Santiago | Bruno | `465cc5e` |
+| #33. Documentación de los refactorings | Santiago | Agustín | `0ed7e4b` |
+| #34. SonarQube final y diagnóstico | Agustín | Santiago | `8cb2b40` |
+| #35. README final | Santiago | Bruno | `c5e488a` |
+
+**Revisión del #26:** Bruno revisó que `SolicitudTurno` fuera un `dataclass` inmutable, y que se mantuvieran el orden de las validaciones, la precedencia de los mensajes y el formato que se guarda en el JSON. Revisó también que la consola cree la solicitud después de validar los números y que las pruebas usen la nueva forma de llamar. Lo aprobó el 05/11, con las 20 pruebas, Black y flake8 en verde, y lo integró.
