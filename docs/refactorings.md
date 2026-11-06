@@ -5,7 +5,7 @@ Este documento constituye el registro técnico formal de los cuatro refactorings
 El propósito de los cuatro refactorings es mejorar la calidad interna del código (reducir duplicación, separar responsabilidades y aumentar la cohesión) conservando el comportamiento observable bajo las precondiciones indicadas en cada ficha. H9 se distingue porque corrige un comportamiento observable ante fallos de guardado.
 
 > **Alcance de este documento:**  
-> Se documentan los cuatro refactorings acordados (**H2**, **H1 / H5**, **H3** y **H6**) y la corrección complementaria de persistencia (**H9**), integrados en `main` mediante sus Pull Requests. H2 y H3 tuvieron verificación manual reportada; la suite con `unittest` y la integración continua se incorporaron después, en el PR #22. Las cantidades de pruebas y los resultados citados son reportes históricos, no ejecuciones realizadas para esta actualización documental.
+> Se documentan los cuatro refactorings acordados (**H2**, **H1 / H5**, **H3** y **H6**) y la corrección complementaria de persistencia (**H9**), integrados en `main` mediante sus Pull Requests. H2 y H3 tuvieron verificación manual reportada; la suite con `unittest` y la integración continua se incorporaron después, en el PR #22.
 
 ---
 
@@ -14,7 +14,7 @@ El propósito de los cuatro refactorings es mejorar la calidad interna del códi
 ### Trazabilidad y metadatos
 - **ID de diagnóstico asociado:** [H2 - Búsqueda por número duplicada (*Duplicated Code*)](diagnostico.md#h2--búsqueda-por-número-duplicada-duplicated-code)
 - **Técnica de refactoring:** *Extract Method* (Fowler)
-- **Issue en GitHub:** [#15 - Refactoring H2: Unificar bucles de búsqueda por ID](https://github.com/enkai12/hospital-central-msii/issues/15)
+- **Issue en GitHub:** [#15 - Unificar la búsqueda por número en una sola función (H2)](https://github.com/enkai12/hospital-central-msii/issues/15)
 - **Pull Request:** [#20 - Busco pacientes, profesionales y turnos con una sola función](https://github.com/enkai12/hospital-central-msii/pull/20)
 - **Rama de trabajo:** `refactor/15-busqueda-unica`
 - **Commit funcional inicial:** [`e3f1d168e9df51c46d2cf29bce0aff452b56dd19`](https://github.com/enkai12/hospital-central-msii/commit/e3f1d168e9df51c46d2cf29bce0aff452b56dd19)
@@ -98,11 +98,11 @@ def buscar_por_id(elementos, id_buscado):
 - **Comparación sin validación de tipos:** Se conserva `elemento["id"] == id_buscado`; el helper no valida que los operandos sean enteros ni corrige registros inválidos.
 
 ### Evidencia histórica y estado de verificación
-- **Contexto histórico de validación (PR #20):** En su integración todavía no se había incorporado la suite automatizada del PR #22. Esto no equivale a una medición de cobertura del 0%.
+- **Contexto histórico de validación (PR #20):** En su integración todavía no se había incorporado la suite automatizada del PR #22.
 - **Evidencia registrada en el PR:** Se reportaron verificaciones manuales mediante:
   1. El guion interactivo de demostración de 7 pasos (`python main.py`).
   2. Una batería de 16 casos de borde por consola.
-- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` para reservas, cancelaciones, agenda e historial (integradas en el commit `e94aaad`, consultables en la versión actual en [`tests/test_turnos.py`](../tests/test_turnos.py)). Los casos de caracterización aportan evidencia de no regresión en los escenarios comprobados, no una demostración formal ni cobertura exhaustiva.
+- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` para reservas, cancelaciones, agenda e historial (integradas en el commit `e94aaad`, consultables en la versión actual en [`tests/test_turnos.py`](../tests/test_turnos.py)).
 
 ---
 
@@ -113,7 +113,7 @@ def buscar_por_id(elementos, id_buscado):
   - [H1 - Funciones largas (*Long Method*)](diagnostico.md#h1--funciones-largas-long-method)  
   - [H5 - Validación de fecha duplicada (*Duplicated Code*)](diagnostico.md#h5--validación-de-fecha-duplicada-duplicated-code)
 - **Técnica de refactoring:** *Extract Method* (Fowler)
-- **Issue en GitHub:** [#17 - Refactorings H1 y H5: Funciones largas y validaciones duplicadas](https://github.com/enkai12/hospital-central-msii/issues/17)
+- **Issue en GitHub:** [#17 - Extraer funciones del menú y de los controles de la reserva (H1)](https://github.com/enkai12/hospital-central-msii/issues/17)
 - **Pull Request:** [#23 - refactor: extraer funciones del menu y controles de reserva (H1, H5)](https://github.com/enkai12/hospital-central-msii/pull/23)
 - **Rama de trabajo:** `refactor/17-funciones-cortas`
 - **Commit funcional inicial:** [`4f707c61dcd600986a3457d800c878ff34bc9cf6`](https://github.com/enkai12/hospital-central-msii/commit/4f707c61dcd600986a3457d800c878ff34bc9cf6)
@@ -309,16 +309,15 @@ def opcion_reservar_turno(datos):
 ### Evidencia histórica y estado de verificación
 - **Entorno de integración y CI (PR #23):** La rama de trabajo se abrió a partir de `e873b85` (H3, antes del PR #22) e incorporó la suite y el workflow de CI al sincronizar `main` (`e94aaad`) en el commit `43f988c`. Por ello, a diferencia de H2 y H3, su validación final e integración en `main` contaron con la verificación automatizada en GitHub Actions.
 - **Evidencia registrada en el PR:** El PR #23 reporta **19 pruebas automatizadas** con `unittest`, junto con controles de estilo mediante `flake8` y `black` (commit de formateo `0baf95f`).
-- **Alcance de esa evidencia:** Los resultados reportados respaldan la conservación del comportamiento en los casos probados; no demuestran equivalencia formal ni ausencia de regresiones en cualquier entrada.
 
 ---
 
-## Ficha Técnica 3: H3 - Reubicación de responsabilidades de persistencia y desacoplamiento (*Extract Module* / *Move Method*)
+## Ficha Técnica 3: H3 - Reubicación de responsabilidades de persistencia y desacoplamiento (*Move Method*)
 
 ### Trazabilidad y metadatos
-- **ID de diagnóstico asociado:** [H3 - Reglas y archivo en el mismo módulo (*Large Class* y baja cohesión)](diagnostico.md#h3--reglas-y-archivo-en-el-mismo-módulo-large-class-y-baja-cohesión)
-- **Técnica de refactoring:** *Extract Module* / *Move Method* (Fowler)
-- **Issue en GitHub:** [#18 - Refactoring H3: Separar la persistencia JSON de las reglas de gestión](https://github.com/enkai12/hospital-central-msii/issues/18)
+- **ID de diagnóstico asociado:** [H3 - Reglas y archivo en el mismo módulo (baja cohesión: dos motivos para cambiar)](diagnostico.md#h3--reglas-y-archivo-en-el-mismo-módulo-baja-cohesión-dos-motivos-para-cambiar)
+- **Técnica de refactoring:** *Move Method*, reubicación de responsabilidad (Fowler)
+- **Issue en GitHub:** [#18 - Mover la carga y el guardado a un módulo de persistencia (H3)](https://github.com/enkai12/hospital-central-msii/issues/18)
 - **Pull Request:** [#21 - Paso la carga y el guardado del JSON a un módulo de persistencia](https://github.com/enkai12/hospital-central-msii/pull/21)
 - **Rama de trabajo:** `refactor/18-persistencia`
 - **Commit funcional inicial:** [`21a5e2c366eb13cd880c61c216c3bdd77037a533`](https://github.com/enkai12/hospital-central-msii/commit/21a5e2c366eb13cd880c61c216c3bdd77037a533)
@@ -329,7 +328,7 @@ En el sistema base (`e5d6927`), el módulo `hospital/gestion.py` asumía simult�
 1. Las reglas de dominio médico de la agenda de turnos (altas de pacientes, validación de turnos, cancelaciones y consultas).
 2. Los detalles de infraestructura física y persistencia en disco: importación de `json` y `shutil`, apertura de archivos con codificación UTF-8, carga con `json.load()` y serialización directa con `json.dump()`.
 
-El diagnóstico clasifica históricamente este problema como *Large Class* / baja cohesión por analogía con la literatura orientada a objetos; aquí se trata de un módulo procedimental, no de una clase existente. La mezcla reúne dos motivos de cambio en `hospital/gestion.py`. Las reglas ya operaban sobre diccionarios y listas en memoria, sin necesitar leer o escribir archivos en cada llamada; el problema era la convivencia de responsabilidades en el mismo módulo, no una dependencia de ejecución inseparable.
+La mezcla reúne dos motivos de cambio en `hospital/gestion.py`. Las reglas ya operaban sobre diccionarios y listas en memoria, sin necesitar leer o escribir archivos en cada llamada; el problema era la convivencia de responsabilidades en el mismo módulo, no una dependencia de ejecución inseparable.
 
 > **Aclaración crucial de alcance:** Este refactoring consistió exclusivamente en la extracción modular y el desacoplamiento de dependencias. **No introdujo atomicidad ni guardado temporal en disco**; esas mejoras de robustez frente a fallos corresponden a una etapa posterior (ver sección complementaria H9).
 
@@ -404,9 +403,9 @@ def main():
 - **Manejo de errores inicial:** En esta etapa, `guardar_datos` conservó la escritura directa con truncamiento inmediato de archivo (`with open(ruta, "w")`), manteniendo idéntica vulnerabilidad a fallos abruptos que el código original.
 
 ### Evidencia histórica y estado de verificación
-- **Contexto histórico (PR #21):** Se integró después de H2 (#20) y antes de la suite automatizada del PR #22. La ausencia de esa suite no es una medición porcentual de cobertura.
+- **Contexto histórico (PR #21):** Se integró después de H2 (#20) y antes de la suite automatizada del PR #22.
 - **Evidencia registrada en el PR:** Se reportó verificación manual de la demostración y de casos de borde, incluidos los flujos de carga y guardado.
-- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` sobre carga, escritura y uso integrado de los datos (incorporadas en el commit `e94aaad`, consultables en la versión actual en [`tests/test_persistencia.py`](../tests/test_persistencia.py)). Son casos concretos de caracterización, no una comprobación exhaustiva de la persistencia.
+- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` sobre carga, escritura y uso integrado de los datos (incorporadas en el commit `e94aaad`, consultables en la versión actual en [`tests/test_persistencia.py`](../tests/test_persistencia.py)).
 
 ---
 
@@ -415,7 +414,7 @@ def main():
 ### Trazabilidad y metadatos
 - **ID de diagnóstico asociado:** [H6 - Demasiados parámetros en la reserva (*Long Parameter List*)](diagnostico.md#h6--demasiados-parámetros-en-la-reserva-long-parameter-list)
 - **Técnica de refactoring:** *Introduce Parameter Object* (Fowler)
-- **Issue en GitHub:** [#19 - Refactoring H6: Agrupar datos de reserva en un objeto de dominio](https://github.com/enkai12/hospital-central-msii/issues/19)
+- **Issue en GitHub:** [#19 - Agrupar los datos de la reserva en un objeto de solicitud (H6)](https://github.com/enkai12/hospital-central-msii/issues/19)
 - **Pull Request:** [#26 - Agrupar los datos de la reserva en un objeto de solicitud (H6)](https://github.com/enkai12/hospital-central-msii/pull/26)
 - **Rama de trabajo:** `refactor/19-objeto-solicitud-turno`
 - **Commit funcional inicial:** [`8879924aa988b444fdeb07a52ee21f5d7c47acd7`](https://github.com/enkai12/hospital-central-msii/commit/8879924aa988b444fdeb07a52ee21f5d7c47acd7)
@@ -426,7 +425,7 @@ La función central de reservas en `hospital/gestion.py` exponía la siguiente f
 ```python
 def reservar_turno(datos, paciente_id, profesional_id, fecha, hora):
 ```
-Esta signatura presentaba los *code smells* de **Lista larga de parámetros** (*Long Parameter List*) y **Grupo de datos acoplados** (*Data Clumps*):
+Esta signatura presentaba el *code smell* de **Lista larga de parámetros** (*Long Parameter List*):
 - Los cuatro parámetros de la reserva (`paciente_id: int`, `profesional_id: int`, `fecha: str`, `hora: str`) viajaban siempre agrupados desde la captura de consola en `main.py` hacia las distintas funciones de control.
 - Riesgo de orden posicional: Dos IDs enteros y dos cadenas contiguas facilitan intercambios accidentales al invocar la función. La firma previa no expresa nombres de campos en una llamada posicional ni valida los tipos en ejecución.
 
@@ -548,7 +547,7 @@ def reservar_turno(datos, solicitud: SolicitudTurno):
 
 ### Evidencia histórica y estado de verificación
 - **CI disponible (PR #26):** El repositorio ya contaba con pruebas y controles en GitHub Actions desde el PR #22.
-- **Evidencia registrada en el PR:** El PR #26 reporta la migración de las llamadas de prueba a `SolicitudTurno` y **20 pruebas automatizadas aprobadas** con `unittest`, además de controles con `flake8` y `black`. Son resultados históricos, no una ejecución nueva de esta documentación.
+- **Evidencia registrada en el PR:** El PR #26 reporta la migración de las llamadas de prueba a `SolicitudTurno` y **20 pruebas automatizadas aprobadas** con `unittest`, además de controles con `flake8` y `black`.
 
 ---
 
@@ -560,7 +559,7 @@ def reservar_turno(datos, solicitud: SolicitudTurno):
 ### Trazabilidad y metadatos
 - **ID de diagnóstico asociado:** [H9 - Escritura directa sobre el archivo](diagnostico.md#h9--escritura-directa-sobre-el-archivo)
 - **Naturaleza del cambio:** Corrección de robustez física (*Atomic File Persistence*)
-- **Issue en GitHub:** [#24 - Fix H9: Guardado seguro en archivo temporal para evitar pérdida de datos](https://github.com/enkai12/hospital-central-msii/issues/24)
+- **Issue en GitHub:** [#24 - Guardar los datos sin dejar el archivo a medio escribir (H9)](https://github.com/enkai12/hospital-central-msii/issues/24)
 - **Pull Request:** [#25 - Guardo los datos en un archivo temporal y reemplazo el original al terminar](https://github.com/enkai12/hospital-central-msii/pull/25)
 - **Rama de trabajo:** `fix/24-guardado-seguro`
 - **Commit funcional inicial:** [`1bbe682bf45267306a4e8d7253a14a694bf5f338`](https://github.com/enkai12/hospital-central-msii/commit/1bbe682bf45267306a4e8d7253a14a694bf5f338)
@@ -610,7 +609,7 @@ En el PR #25 se incorporó `test_guardar_con_error_no_modifica_destino` (commit 
 2. Que el destino conserva sus bytes originales.
 3. Que no queda el temporal en el directorio de la prueba.
 
-El PR reporta **20 pruebas automatizadas** con `unittest`. Ese caso no comprueba fallos de limpieza, interrupciones no capturables, durabilidad ante apagones ni escrituras concurrentes; no se ejecutaron pruebas nuevas para este documento.
+El PR reporta **20 pruebas automatizadas** con `unittest`. Ese caso no comprueba fallos de limpieza, interrupciones no capturables, durabilidad ante apagones ni escrituras concurrentes.
 
 ---
 
@@ -621,14 +620,14 @@ El PR reporta **20 pruebas automatizadas** con `unittest`. Ese caso no comprueba
 | ID | Técnica / Naturaleza | Alcance Principal | Issue | Pull Request | Commit Funcional | Commit Merge (`main`) | Verificación registrada en el PR |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **H2** | *Extract Method* | Centralización de búsquedas por ID en `buscar_por_id` | [#15](https://github.com/enkai12/hospital-central-msii/issues/15) | [#20](https://github.com/enkai12/hospital-central-msii/pull/20) | [`e3f1d16`](https://github.com/enkai12/hospital-central-msii/commit/e3f1d168e9df51c46d2cf29bce0aff452b56dd19) | [`fc147dc`](https://github.com/enkai12/hospital-central-msii/commit/fc147dcdd0c9a6e6e5bd2d87fedb2de17c3e3a13) | Manual: 7 pasos demo y 16 casos de borde |
-| **H3** | *Extract Module* / *Move Method* | Desacoplamiento de persistencia en `hospital/persistencia.py` | [#18](https://github.com/enkai12/hospital-central-msii/issues/18) | [#21](https://github.com/enkai12/hospital-central-msii/pull/21) | [`21a5e2c`](https://github.com/enkai12/hospital-central-msii/commit/21a5e2c366eb13cd880c61c216c3bdd77037a533) | [`e873b85`](https://github.com/enkai12/hospital-central-msii/commit/e873b855c77b66b690fc0478bd212f3bd5de9d1e) | Manual reportada: demo y casos de borde |
+| **H3** | *Move Method* (reubicación de responsabilidad) | Desacoplamiento de persistencia en `hospital/persistencia.py` | [#18](https://github.com/enkai12/hospital-central-msii/issues/18) | [#21](https://github.com/enkai12/hospital-central-msii/pull/21) | [`21a5e2c`](https://github.com/enkai12/hospital-central-msii/commit/21a5e2c366eb13cd880c61c216c3bdd77037a533) | [`e873b85`](https://github.com/enkai12/hospital-central-msii/commit/e873b855c77b66b690fc0478bd212f3bd5de9d1e) | Manual reportada: demo y casos de borde |
 | **H1 / H5** | *Extract Method* | Modularización de consola (`main.py`) y validaciones en `gestion.py` | [#17](https://github.com/enkai12/hospital-central-msii/issues/17) | [#23](https://github.com/enkai12/hospital-central-msii/pull/23) | [`4f707c6`](https://github.com/enkai12/hospital-central-msii/commit/4f707c61dcd600986a3457d800c878ff34bc9cf6) | [`a10ba35`](https://github.com/enkai12/hospital-central-msii/commit/a10ba35e75b9fce235ac91ea0834caceac6ac1e1) | Reporte: 19 pruebas con `unittest`; controles `flake8` y `black` |
 | **H9** | *Fix / Robustness* *(Complementario)* | Escritura en `.tmp` y reemplazo atómico exitoso con `os.replace` | [#24](https://github.com/enkai12/hospital-central-msii/issues/24) | [#25](https://github.com/enkai12/hospital-central-msii/pull/25) | [`1bbe682`](https://github.com/enkai12/hospital-central-msii/commit/1bbe682bf45267306a4e8d7253a14a694bf5f338) | [`c6ce82b`](https://github.com/enkai12/hospital-central-msii/commit/c6ce82bc4c28e17b77d11228a0beacec678a7abf) | Reporte: 20 pruebas con `unittest`, incluida la de error de serialización |
 | **H6** | *Introduce Parameter Object* | Agrupación de datos de reserva en `SolicitudTurno` con campos congelados | [#19](https://github.com/enkai12/hospital-central-msii/issues/19) | [#26](https://github.com/enkai12/hospital-central-msii/pull/26) | [`8879924`](https://github.com/enkai12/hospital-central-msii/commit/8879924aa988b444fdeb07a52ee21f5d7c47acd7) | [`465cc5e`](https://github.com/enkai12/hospital-central-msii/commit/465cc5e28fc7cd0de1f86763c7488f9a7a4fe337) | Reporte: 20 pruebas con `unittest`, con llamadas migradas a `SolicitudTurno` |
 
 ### Cronología y metodología en la verificación
 El proceso de refactoring atravesó un desarrollo paulatino en su estrategia de aseguramiento de calidad:
-1. **Verificación inicial (H2 y H3, PRs #20 y #21):** Antes de incorporar la suite automatizada se reportaron verificaciones manuales de demostración y casos de borde. La ausencia de suite no permite asignar un porcentaje medido de cobertura.
+1. **Verificación inicial (H2 y H3, PRs #20 y #21):** Antes de incorporar la suite automatizada se reportaron verificaciones manuales de demostración y casos de borde.
 2. **Incorporación de automatización (PR #22):** Se añadieron pruebas de caracterización unitarias y de integración en `tests/` con `unittest` y CI en GitHub Actions, junto con controles `flake8` y `black`.
-3. **Cambios posteriores (H1/H5, H9 y H6, PRs #23, #25 y #26):** Sus reportes históricos indican 19 pruebas en #23 y 20 en #25 y #26. Esa evidencia corresponde a los escenarios probados; no demuestra ausencia universal de regresiones ni equivalencia formal de las doce reglas operativas. No son ejecuciones realizadas para esta actualización documental.
+3. **Cambios posteriores (H1/H5, H9 y H6, PRs #23, #25 y #26):** Sus reportes históricos indican 19 pruebas en #23 y 20 en #25 y #26.
 
