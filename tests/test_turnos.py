@@ -7,6 +7,7 @@ from hospital.gestion import (
     ACTIVO,
     CANCELADO,
     FRANJAS,
+    SolicitudTurno,
     agenda_profesional,
     cancelar_turno,
     historial_paciente,
@@ -35,7 +36,10 @@ class TestTurnos(unittest.TestCase):
 
     def test_reserva_valida_crea_turno_y_avanza_contador(self):
         """Una reserva válida crea el registro ACTIVO y avanza proximo_turno."""
-        exito, _ = reservar_turno(self.datos, 1, 1, "2026-11-10", "09:00")
+        solicitud = SolicitudTurno(
+            paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="09:00"
+        )
+        exito, _ = reservar_turno(self.datos, solicitud)
         self.assertTrue(exito)
         self.assertEqual(self.datos["proximo_turno"], 2)
         self.assertEqual(len(self.datos["turnos"]), 1)
@@ -55,7 +59,10 @@ class TestTurnos(unittest.TestCase):
         for franja in FRANJAS:
             with self.subTest(franja=franja):
                 datos = copy.deepcopy(self.datos)
-                exito, _ = reservar_turno(datos, 1, 1, "2026-11-10", franja)
+                solicitud = SolicitudTurno(
+                    paciente_id=1, profesional_id=1, fecha="2026-11-10", hora=franja
+                )
+                exito, _ = reservar_turno(datos, solicitud)
                 self.assertTrue(exito)
                 self.assertEqual(datos["proximo_turno"], 2)
                 self.assertEqual(len(datos["turnos"]), 1)
@@ -77,28 +84,46 @@ class TestTurnos(unittest.TestCase):
         for descripcion, (paciente_id, prof_id, fecha, hora) in casos:
             with self.subTest(caso=descripcion):
                 datos_esperados = copy.deepcopy(self.datos)
-                exito, _ = reservar_turno(self.datos, paciente_id, prof_id, fecha, hora)
+                solicitud = SolicitudTurno(
+                    paciente_id=paciente_id,
+                    profesional_id=prof_id,
+                    fecha=fecha,
+                    hora=hora,
+                )
+                exito, _ = reservar_turno(self.datos, solicitud)
                 self.assertFalse(exito)
                 self.assertEqual(self.datos, datos_esperados)
 
     def test_conflictos_y_concurrencia_de_franjas(self):
         """Superposiciones se rechazan sin mutar; combinaciones libres se permiten."""
-        exito_inicial, _ = reservar_turno(self.datos, 1, 1, "2026-11-10", "09:00")
+        solicitud_inicial = SolicitudTurno(
+            paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="09:00"
+        )
+        exito_inicial, _ = reservar_turno(self.datos, solicitud_inicial)
         self.assertTrue(exito_inicial)
         estado_con_un_turno = copy.deepcopy(self.datos)
 
         # Mismo profesional ocupado en misma fecha y hora
-        exito_prof_ocupado, _ = reservar_turno(self.datos, 2, 1, "2026-11-10", "09:00")
+        solicitud_prof_ocupado = SolicitudTurno(
+            paciente_id=2, profesional_id=1, fecha="2026-11-10", hora="09:00"
+        )
+        exito_prof_ocupado, _ = reservar_turno(self.datos, solicitud_prof_ocupado)
         self.assertFalse(exito_prof_ocupado)
         self.assertEqual(self.datos, estado_con_un_turno)
 
         # Mismo paciente ocupado en misma fecha y hora
-        exito_pac_ocupado, _ = reservar_turno(self.datos, 1, 2, "2026-11-10", "09:00")
+        solicitud_pac_ocupado = SolicitudTurno(
+            paciente_id=1, profesional_id=2, fecha="2026-11-10", hora="09:00"
+        )
+        exito_pac_ocupado, _ = reservar_turno(self.datos, solicitud_pac_ocupado)
         self.assertFalse(exito_pac_ocupado)
         self.assertEqual(self.datos, estado_con_un_turno)
 
         # Mismo profesional con otro paciente en otra franja: permitido
-        exito_otra_franja, _ = reservar_turno(self.datos, 2, 1, "2026-11-10", "09:30")
+        solicitud_otra_franja = SolicitudTurno(
+            paciente_id=2, profesional_id=1, fecha="2026-11-10", hora="09:30"
+        )
+        exito_otra_franja, _ = reservar_turno(self.datos, solicitud_otra_franja)
         self.assertTrue(exito_otra_franja)
         self.assertEqual(len(self.datos["turnos"]), 2)
         turno_esperado = {
@@ -114,7 +139,10 @@ class TestTurnos(unittest.TestCase):
 
         # Mismo profesional con otro paciente en la misma franja de otra fecha:
         # permitido
-        exito_otra_fecha, _ = reservar_turno(self.datos, 2, 1, "2026-11-11", "09:00")
+        solicitud_otra_fecha = SolicitudTurno(
+            paciente_id=2, profesional_id=1, fecha="2026-11-11", hora="09:00"
+        )
+        exito_otra_fecha, _ = reservar_turno(self.datos, solicitud_otra_fecha)
         self.assertTrue(exito_otra_fecha)
         self.assertEqual(len(self.datos["turnos"]), 3)
         turno_esperado = {
@@ -129,9 +157,10 @@ class TestTurnos(unittest.TestCase):
         self.assertEqual(self.datos["proximo_turno"], 4)
 
         # Otro profesional con otro paciente en la franja original: permitido
-        exito_otro_prof_y_pac, _ = reservar_turno(
-            self.datos, 2, 2, "2026-11-10", "09:00"
+        solicitud_otro_prof_y_pac = SolicitudTurno(
+            paciente_id=2, profesional_id=2, fecha="2026-11-10", hora="09:00"
         )
+        exito_otro_prof_y_pac, _ = reservar_turno(self.datos, solicitud_otro_prof_y_pac)
         self.assertTrue(exito_otro_prof_y_pac)
         self.assertEqual(len(self.datos["turnos"]), 4)
         turno_esperado = {
@@ -184,14 +213,20 @@ class TestTurnos(unittest.TestCase):
                 datos["proximo_turno"] = 3
                 snapshot = copy.deepcopy(datos)
 
-                exito, mensaje = reservar_turno(datos, 1, 1, "2026-11-10", "09:00")
+                solicitud = SolicitudTurno(
+                    paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="09:00"
+                )
+                exito, mensaje = reservar_turno(datos, solicitud)
                 self.assertFalse(exito)
                 self.assertEqual(mensaje, mensaje_esperado)
                 self.assertEqual(datos, snapshot)
 
     def test_cancelacion_libera_franja_y_conserva_historial(self):
         """Cancelar actualiza a CANCELADO y permite reservar de nuevo esa franja."""
-        reservar_turno(self.datos, 1, 1, "2026-11-10", "09:00")
+        solicitud = SolicitudTurno(
+            paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="09:00"
+        )
+        reservar_turno(self.datos, solicitud)
 
         exito_cancel, _ = cancelar_turno(self.datos, 1)
         self.assertTrue(exito_cancel)
@@ -199,7 +234,7 @@ class TestTurnos(unittest.TestCase):
         self.assertEqual(self.datos["turnos"][0]["estado"], CANCELADO)
 
         # La misma combinación se puede reservar de nuevo tras la cancelación
-        exito_nueva_reserva, _ = reservar_turno(self.datos, 1, 1, "2026-11-10", "09:00")
+        exito_nueva_reserva, _ = reservar_turno(self.datos, solicitud)
         self.assertTrue(exito_nueva_reserva)
         self.assertEqual(len(self.datos["turnos"]), 2)
         self.assertEqual(self.datos["turnos"][0]["id"], 1)
@@ -209,7 +244,10 @@ class TestTurnos(unittest.TestCase):
 
     def test_cancelacion_invalida_no_muta_datos(self):
         """Cancelar un turno inexistente o ya cancelado falla sin alterar datos."""
-        reservar_turno(self.datos, 1, 1, "2026-11-10", "09:00")
+        solicitud = SolicitudTurno(
+            paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="09:00"
+        )
+        reservar_turno(self.datos, solicitud)
         cancelar_turno(self.datos, 1)
         estado_esperado = copy.deepcopy(self.datos)
 
@@ -226,10 +264,30 @@ class TestTurnos(unittest.TestCase):
     def test_agenda_profesional_estructura_ocupacion_y_cancelacion(self):
         """Agenda devuelve las 6 franjas ordenadas, refleja ocupación y cancelados."""
         # Insertar turnos desordenados, para otra fecha y para otro profesional
-        reservar_turno(self.datos, 1, 1, "2026-11-10", "11:00")  # ID 1
-        reservar_turno(self.datos, 2, 1, "2026-11-10", "09:30")  # ID 2
-        reservar_turno(self.datos, 1, 2, "2026-11-10", "09:00")  # ID 3 (otro prof)
-        reservar_turno(self.datos, 2, 1, "2026-11-11", "10:00")  # ID 4 (otra fecha)
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="11:00"
+            ),
+        )  # ID 1
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=2, profesional_id=1, fecha="2026-11-10", hora="09:30"
+            ),
+        )  # ID 2
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=1, profesional_id=2, fecha="2026-11-10", hora="09:00"
+            ),
+        )  # ID 3 (otro prof)
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=2, profesional_id=1, fecha="2026-11-11", hora="10:00"
+            ),
+        )  # ID 4 (otra fecha)
 
         exito, agenda = agenda_profesional(self.datos, 1, "2026-11-10")
         self.assertTrue(exito)
@@ -271,10 +329,30 @@ class TestTurnos(unittest.TestCase):
         cronológicamente.
         """
         # Reservar fuera de orden cronológico para paciente 1 y otro para paciente 2
-        reservar_turno(self.datos, 1, 1, "2026-11-12", "09:00")  # ID 1
-        reservar_turno(self.datos, 1, 2, "2026-11-10", "11:00")  # ID 2
-        reservar_turno(self.datos, 2, 1, "2026-11-10", "09:00")  # ID 3 (paciente 2)
-        reservar_turno(self.datos, 1, 1, "2026-11-10", "09:30")  # ID 4
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=1, profesional_id=1, fecha="2026-11-12", hora="09:00"
+            ),
+        )  # ID 1
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=1, profesional_id=2, fecha="2026-11-10", hora="11:00"
+            ),
+        )  # ID 2
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=2, profesional_id=1, fecha="2026-11-10", hora="09:00"
+            ),
+        )  # ID 3 (paciente 2)
+        reservar_turno(
+            self.datos,
+            SolicitudTurno(
+                paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="09:30"
+            ),
+        )  # ID 4
 
         # Cancelar turno 2 para verificar que se incluye en el historial
         cancelar_turno(self.datos, 2)
@@ -308,9 +386,12 @@ class TestTurnos(unittest.TestCase):
 
     def test_historial_paciente_desempate_por_id(self):
         """Ante misma fecha y hora, el historial desempata por ID ascendentemente."""
-        reservar_turno(self.datos, 1, 1, "2026-11-15", "09:00")  # ID 1
+        solicitud = SolicitudTurno(
+            paciente_id=1, profesional_id=1, fecha="2026-11-15", hora="09:00"
+        )
+        reservar_turno(self.datos, solicitud)  # ID 1
         cancelar_turno(self.datos, 1)
-        reservar_turno(self.datos, 1, 1, "2026-11-15", "09:00")  # ID 2
+        reservar_turno(self.datos, solicitud)  # ID 2
 
         # Invertir el orden físico en turnos para comprobar que el orden final no
         # depende del orden de inserción sino del criterio (fecha, hora, id)

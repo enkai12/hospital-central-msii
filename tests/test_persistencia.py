@@ -7,6 +7,7 @@ import unittest
 
 from hospital.gestion import (
     ACTIVO,
+    SolicitudTurno,
     agenda_profesional,
     historial_paciente,
     registrar_paciente,
@@ -140,7 +141,10 @@ class TestPersistencia(unittest.TestCase):
             encoding="utf-8",
         )
 
-        exito_reserva, _ = reservar_turno(self.datos, 1, 1, "2026-11-10", "09:00")
+        solicitud = SolicitudTurno(
+            paciente_id=1, profesional_id=1, fecha="2026-11-10", hora="09:00"
+        )
+        exito_reserva, _ = reservar_turno(self.datos, solicitud)
         self.assertTrue(exito_reserva)
 
         guardar_datos(self.datos, self.ruta_datos)
