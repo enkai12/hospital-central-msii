@@ -26,7 +26,7 @@ En la versión inicial (`e5d6927`), el módulo `hospital/gestion.py` repetía ex
 - Tres búsquedas sobre `datos["profesionales"]` (en `reservar_turno`, `agenda_profesional` e `historial_paciente`).
 - Una búsqueda sobre `datos["turnos"]` (en `cancelar_turno`).
 
-Dicho patrón consistía en inicializar una variable auxiliar en `None`, iterar mediante un bucle `for` sobre la colección y comparar `item["id"] == id_buscado`. Además de la duplicación manifiesta (*Duplicated Code*), el bucle carecía de sentencia de corte temprano (`break` o `return`), obligando a recorrer la totalidad de la lista incluso tras haber hallado la entidad buscada.
+En cinco de esas ubicaciones (validaciones de existencia en reserva, cancelación y consultas), el patrón consistía en inicializar una variable auxiliar en `None`, iterar mediante un bucle `for` y comparar `item["id"] == id_buscado`; en las otras dos (resolución anidada de paciente en agenda y de profesional en historial), el bucle asignaba a una clave de diccionario o agregaba directamente al listado. En los siete casos, además de la duplicación manifiesta (*Duplicated Code*), el recorrido carecía de sentencia de corte temprano (`break` o `return`), obligando a recorrer la totalidad de la lista incluso tras haber hallado la entidad buscada.
 
 ### Transformación aplicada
 Se extrajo la función auxiliar pura `buscar_por_id(elementos, id_buscado)` al inicio de `hospital/gestion.py`, dotándola de retorno inmediato (*early return*):
@@ -94,7 +94,7 @@ def buscar_por_id(elementos, id_buscado):
 
 ### Límites de equivalencia
 - **Semántica de retorno:** `buscar_por_id` retorna la **primera** coincidencia que cumpla `elemento["id"] == id_buscado` o `None` en caso de no hallarla.
-- **Precondición de unicidad:** El bucle previo sin corte retenía la **última** coincidencia; el helper retorna la primera. Ambos seleccionan la misma entidad si los IDs son únicos dentro de cada colección, como se espera de datos válidos. La Regla 1 describe la generación de IDs de pacientes y turnos, no de profesionales. Esa generación no garantiza unicidad ante ediciones arbitrarias del JSON o contadores inconsistentes; la unicidad de profesionales también es una precondición de los datos, no una validación añadida por H2.
+- **Precondición de unicidad:** En las búsquedas con variable acumuladora, el bucle previo retenía la **última** coincidencia si existían duplicados; en el historial, la ausencia de corte podía llegar a acumular entradas repetidas. Con `buscar_por_id`, la selección coincide exactamente con el comportamiento esperado si los IDs son únicos dentro de cada colección, como corresponde a datos válidos. La Regla 1 describe la generación de IDs de pacientes y turnos, no de profesionales. Dicha generación no garantiza unicidad ante ediciones arbitrarias del JSON o contadores inconsistentes; la unicidad de profesionales también es una precondición de los datos, no una validación agregada por H2.
 - **Comparación sin validación de tipos:** Se conserva `elemento["id"] == id_buscado`; el helper no valida que los operandos sean enteros ni corrige registros inválidos.
 
 ### Evidencia histórica y estado de verificación
@@ -102,7 +102,7 @@ def buscar_por_id(elementos, id_buscado):
 - **Evidencia registrada en el PR:** Se reportaron verificaciones manuales mediante:
   1. El guion interactivo de demostración de 7 pasos (`python main.py`).
   2. Una batería de 16 casos de borde por consola.
-- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` en [`tests/test_turnos.py`](../tests/test_turnos.py) para reservas, cancelaciones, agenda e historial. Los casos de caracterización aportan evidencia de no regresión en los escenarios comprobados, no una demostración formal ni cobertura exhaustiva.
+- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` para reservas, cancelaciones, agenda e historial (integradas en el commit `e94aaad`, consultables en la versión actual en [`tests/test_turnos.py`](../tests/test_turnos.py)). Los casos de caracterización aportan evidencia de no regresión en los escenarios comprobados, no una demostración formal ni cobertura exhaustiva.
 
 ---
 
@@ -307,7 +307,7 @@ def opcion_reservar_turno(datos):
 - **Flujo de consola:** La extracción conserva las solicitudes de entrada, el tratamiento de números mediante `pedir_numero()` y los mensajes del flujo mostrado.
 
 ### Evidencia histórica y estado de verificación
-- **Entorno de integración y CI (PR #23):** A diferencia de H2, el PR #23 fue desarrollado e integrado sobre una base de código que ya contaba con integración continua automatizada configurada en GitHub Actions (incorporada en el PR #22).
+- **Entorno de integración y CI (PR #23):** La rama de trabajo se abrió a partir de `e873b85` (H3, antes del PR #22) e incorporó la suite y el workflow de CI al sincronizar `main` (`e94aaad`) en el commit `43f988c`. Por ello, a diferencia de H2 y H3, su validación final e integración en `main` contaron con la verificación automatizada en GitHub Actions.
 - **Evidencia registrada en el PR:** El PR #23 reporta **19 pruebas automatizadas** con `unittest`, junto con controles de estilo mediante `flake8` y `black` (commit de formateo `0baf95f`).
 - **Alcance de esa evidencia:** Los resultados reportados respaldan la conservación del comportamiento en los casos probados; no demuestran equivalencia formal ni ausencia de regresiones en cualquier entrada.
 
@@ -406,7 +406,7 @@ def main():
 ### Evidencia histórica y estado de verificación
 - **Contexto histórico (PR #21):** Se integró después de H2 (#20) y antes de la suite automatizada del PR #22. La ausencia de esa suite no es una medición porcentual de cobertura.
 - **Evidencia registrada en el PR:** Se reportó verificación manual de la demostración y de casos de borde, incluidos los flujos de carga y guardado.
-- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` en [`tests/test_persistencia.py`](../tests/test_persistencia.py) sobre carga, escritura y uso integrado de los datos. Son casos concretos de caracterización, no una comprobación exhaustiva de la persistencia.
+- **Pruebas automatizadas posteriores:** El PR #22 incorporó pruebas con `unittest` sobre carga, escritura y uso integrado de los datos (incorporadas en el commit `e94aaad`, consultables en la versión actual en [`tests/test_persistencia.py`](../tests/test_persistencia.py)). Son casos concretos de caracterización, no una comprobación exhaustiva de la persistencia.
 
 ---
 
@@ -447,7 +447,7 @@ Esta signatura presentaba los *code smells* de **Lista larga de parámetros** (*
    La función de detección de solapamientos se adaptó para recibir el objeto: `buscar_conflicto(turnos, solicitud: SolicitudTurno)`.
 4. **Migración de consumidores:**  
    - En `main.py` (`opcion_reservar_turno`): se instancia `SolicitudTurno` a partir de los datos ingresados por consola antes de despachar a la regla de negocio.
-   - En la suite de pruebas unitarias ([`tests/test_turnos.py`](../tests/test_turnos.py) y [`tests/test_persistencia.py`](../tests/test_persistencia.py)): todas las llamadas de prueba fueron migradas para instanciar `SolicitudTurno`.
+   - En la suite de pruebas unitarias ([`tests/test_turnos.py`](../tests/test_turnos.py) y [`tests/test_persistencia.py`](../tests/test_persistencia.py), actualizadas en el PR #26): todas las llamadas de prueba fueron migradas para instanciar `SolicitudTurno`.
 
 ### Fragmentos de código antes y después
 
@@ -605,7 +605,7 @@ def guardar_datos(datos, ruta):
 ```
 
 ### Evidencia histórica de verificación
-En el PR #25 se incorporó `test_guardar_con_error_no_modifica_destino` en [`tests/test_persistencia.py`](../tests/test_persistencia.py). El test introduce un objeto no serializable y comprueba, en ese escenario:
+En el PR #25 se incorporó `test_guardar_con_error_no_modifica_destino` (commit `1bbe682`, consultable en la versión actual en [`tests/test_persistencia.py`](../tests/test_persistencia.py)). El test introduce un objeto no serializable y comprueba, en ese escenario:
 1. Que se propaga `TypeError`.
 2. Que el destino conserva sus bytes originales.
 3. Que no queda el temporal en el directorio de la prueba.
