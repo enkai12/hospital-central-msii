@@ -153,5 +153,5 @@ La integración continua corre Black, flake8 y las pruebas en cada push y en cad
 
 ## Entrega
 
-- **Informe técnico (PDF):** [Ver informe en el repositorio](docs/informe-final-TPI.pdf)
+- **Informe técnico (PDF):** [Ver informe en el repositorio](docs/informe-final-tpi.pdf)
 - **Video de presentación:** [Ver video en YouTube](https://www.youtube.com/watch?v=JWyaUtaGNEY)
